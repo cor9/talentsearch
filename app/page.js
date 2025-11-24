@@ -94,6 +94,10 @@ export default async function Page() {
     <main className="page">
       <header className="page-header">
         <div className="hero-text">
+          <div className="hero-brand-row">
+            <img src="/101logo.png" alt="Child Actor 101 logo" className="hero-logo" />
+            <span className="brand">Child Actor 101</span>
+          </div>
           <p className="eyebrow">Attention Youth Talent Agents and Managers!</p>
           <h1 className="page-title">Child Actor 101 Online Talent Representation Open Call</h1>
           <p className="page-subtitle">
@@ -102,12 +106,21 @@ export default async function Page() {
           </p>
         </div>
         <div className="hero-card">
-          <p className="hero-pill">10th Open Call</p>
-          <p className="hero-highlight">100+ Youth Actors</p>
-          <p className="hero-copy">
-            Each submission includes multiple headshots, video links, and casting profiles so you can quickly connect
-            with performers who match your current rosters and wish lists.
-          </p>
+          <div className="hero-card-top">
+            <p className="hero-pill">10th Open Call</p>
+            <p className="hero-highlight">100+ Youth Actors</p>
+            <p className="hero-copy">
+              Each submission includes multiple headshots, video links, and casting profiles so you can quickly connect
+              with performers who match your current rosters and wish lists.
+            </p>
+          </div>
+          <div className="hero-card-footer">
+            <img src="/corey.jpeg" alt="Corey Ralston" className="hero-avatar" />
+            <div className="hero-avatar-text">
+              <p className="hero-avatar-name">Corey Ralston</p>
+              <p className="hero-avatar-title">Founder, Child Actor 101</p>
+            </div>
+          </div>
         </div>
       </header>
 
