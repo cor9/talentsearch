@@ -261,6 +261,32 @@ export function TalentModal({ talent, children }) {
                 className="photo-lightbox-backdrop"
                 onClick={() => setActiveImage(null)}
               >
+                {talent.allImages && talent.allImages.length > 1 && (
+                  <>
+                    <button
+                      className="lightbox-nav lightbox-nav-prev"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const currentIndex = talent.allImages.indexOf(activeImage);
+                        const prevIndex = currentIndex === 0 ? talent.allImages.length - 1 : currentIndex - 1;
+                        setActiveImage(talent.allImages[prevIndex]);
+                      }}
+                    >
+                      ‹
+                    </button>
+                    <button
+                      className="lightbox-nav lightbox-nav-next"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const currentIndex = talent.allImages.indexOf(activeImage);
+                        const nextIndex = currentIndex === talent.allImages.length - 1 ? 0 : currentIndex + 1;
+                        setActiveImage(talent.allImages[nextIndex]);
+                      }}
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
                 <div
                   className="photo-lightbox-shell"
                   onClick={(e) => e.stopPropagation()}
@@ -271,30 +297,6 @@ export function TalentModal({ talent, children }) {
                   >
                     ✕
                   </button>
-                  {talent.allImages && talent.allImages.length > 1 && (
-                    <>
-                      <button
-                        className="lightbox-nav lightbox-nav-prev"
-                        onClick={() => {
-                          const currentIndex = talent.allImages.indexOf(activeImage);
-                          const prevIndex = currentIndex === 0 ? talent.allImages.length - 1 : currentIndex - 1;
-                          setActiveImage(talent.allImages[prevIndex]);
-                        }}
-                      >
-                        ‹
-                      </button>
-                      <button
-                        className="lightbox-nav lightbox-nav-next"
-                        onClick={() => {
-                          const currentIndex = talent.allImages.indexOf(activeImage);
-                          const nextIndex = currentIndex === talent.allImages.length - 1 ? 0 : currentIndex + 1;
-                          setActiveImage(talent.allImages[nextIndex]);
-                        }}
-                      >
-                        ›
-                      </button>
-                    </>
-                  )}
                   <img src={activeImage} alt={talent.name || "Headshot"} />
                 </div>
               </div>
