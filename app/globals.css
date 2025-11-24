@@ -706,6 +706,41 @@ body {
   color: #e5e7eb;
 }
 
+.modal-details-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.3fr);
+  gap: 10px 24px;
+  margin-bottom: 6px;
+}
+
+.modal-details-column {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.modal-detail {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-soft);
+  display: flex;
+  flex-direction: column;
+}
+
+.modal-detail-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-subtle);
+  margin-bottom: 1px;
+}
+
+.modal-details-extra {
+  margin-top: 8px;
+  display: grid;
+  gap: 4px 20px;
+}
+
 .modal-video-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));

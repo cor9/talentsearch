@@ -31,6 +31,113 @@ export function TalentModal({ talent, children }) {
             </header>
 
             <div className="modal-body">
+              <section className="modal-section">
+                <h4 className="modal-section-title">Profile details</h4>
+                <div className="modal-details-grid">
+                  <div className="modal-details-column">
+                    {talent.stageName && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Stage / Birth Name</span>
+                        <span>{talent.stageName}</span>
+                      </p>
+                    )}
+                    {talent.guardianName && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Guardian</span>
+                        <span>{talent.guardianName}</span>
+                      </p>
+                    )}
+                    {talent.birthday && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Birthday</span>
+                        <span>{talent.birthday}</span>
+                      </p>
+                    )}
+                    {talent.genderIdentity && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Gender Identity</span>
+                        <span>{talent.genderIdentity}</span>
+                      </p>
+                    )}
+                    {talent.ethnicity && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Actual + Perceived Ethnicity</span>
+                        <span>{talent.ethnicity}</span>
+                      </p>
+                    )}
+                  </div>
+                  <div className="modal-details-column">
+                    {talent.email && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Email</span>
+                        <span>{talent.email}</span>
+                      </p>
+                    )}
+                    {talent.phone && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Phone</span>
+                        <span>{talent.phone}</span>
+                      </p>
+                    )}
+                    {talent.localHireCities && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Local Hire Cities</span>
+                        <span>{talent.localHireCities}</span>
+                      </p>
+                    )}
+                    {talent.representation && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Current Representation</span>
+                        <span>{talent.representation}</span>
+                      </p>
+                    )}
+                    {talent.seeking && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Seeking Representation</span>
+                        <span>{talent.seeking}</span>
+                      </p>
+                    )}
+                    {talent.castingProfiles && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Casting Profiles</span>
+                        <span>{talent.castingProfiles}</span>
+                      </p>
+                    )}
+                  </div>
+                </div>
+                {(talent.cooganAccount ||
+                  talent.workPermits ||
+                  talent.passport ||
+                  talent.supplementalNotes) && (
+                  <div className="modal-details-extra">
+                    {talent.cooganAccount && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Coogan Account</span>
+                        <span>{talent.cooganAccount}</span>
+                      </p>
+                    )}
+                    {talent.workPermits && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Work Permits</span>
+                        <span>{talent.workPermits}</span>
+                      </p>
+                    )}
+                    {talent.passport && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Passport</span>
+                        <span>{talent.passport}</span>
+                      </p>
+                    )}
+                    {talent.supplementalNotes && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Supplemental Notes</span>
+                        <span>{talent.supplementalNotes}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+              </section>
+
               {talent.videos && talent.videos.length > 0 && (
                 <section className="modal-section">
                   <h4 className="modal-section-title">Videos</h4>
