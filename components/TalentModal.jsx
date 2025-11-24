@@ -98,6 +98,12 @@ export function TalentModal({ talent, children }) {
                         <span>{talent.localHireCities}</span>
                       </p>
                     )}
+                    {talent.union && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">Union Status</span>
+                        <span>{talent.union}</span>
+                      </p>
+                    )}
                     {talent.representation && (
                       <p className="modal-detail">
                         <span className="modal-detail-label">
