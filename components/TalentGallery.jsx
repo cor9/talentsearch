@@ -6,12 +6,18 @@ import { TalentModal } from './TalentModal';
 export function TalentGallery({ data }) {
   const [search, setSearch] = useState('');
   const [unionFilter, setUnionFilter] = useState('All');
+  const [ageFilter, setAgeFilter] = useState('All');
+  const [genderFilter, setGenderFilter] = useState('All');
+  const [seekingFilter, setSeekingFilter] = useState('All');
 
   const filteredTalent = useMemo(() => {
     const searchLower = search.toLowerCase();
 
     return (data || []).filter((person) => {
       const union = person.union || '';
+      const ageNum = typeof person.age === 'number' ? person.age : parseInt(person.age || '', 10);
+      const gender = (person.genderIdentity || '').toLowerCase();
+      const seeking = (person.seeking || '').toLowerCase();
 
       const haystack = [
         person.name,
@@ -37,9 +43,31 @@ export function TalentGallery({ data }) {
 
       const matchesSearch = haystack.includes(searchLower);
       const matchesUnion = unionFilter === 'All' || union.includes(unionFilter);
-      return matchesSearch && matchesUnion;
+
+      const matchesAge =
+        ageFilter === 'All' || Number.isNaN(ageNum)
+          ? true
+          : (ageFilter === 'Under10' && ageNum < 10) ||
+            (ageFilter === '10-13' && ageNum >= 10 && ageNum <= 13) ||
+            (ageFilter === '14-17' && ageNum >= 14 && ageNum <= 17) ||
+            (ageFilter === '18Plus' && ageNum >= 18);
+
+      const matchesGender =
+        genderFilter === 'All'
+          ? true
+          : (genderFilter === 'Female' && (gender.includes('girl') || gender.includes('female'))) ||
+            (genderFilter === 'Male' && (gender.includes('boy') || gender.includes('male'))) ||
+            (genderFilter === 'NonBinary' &&
+              (gender.includes('non') || gender.includes('nb') || gender.includes('they')));
+
+      const matchesSeeking =
+        seekingFilter === 'All'
+          ? true
+          : seeking.includes(seekingFilter.toLowerCase());
+
+      return matchesSearch && matchesUnion && matchesAge && matchesGender && matchesSeeking;
     });
-  }, [data, search, unionFilter]);
+  }, [data, search, unionFilter, ageFilter, genderFilter, seekingFilter]);
 
   return (
     <div className="gallery">
@@ -69,6 +97,57 @@ export function TalentGallery({ data }) {
             <option value="All">Any status</option>
             <option value="SAG">SAG-AFTRA</option>
             <option value="Non-Union">Non-Union</option>
+          </select>
+        </div>
+        <div className="gallery-filter">
+          <label className="field-label" htmlFor="age-filter">
+            Age
+          </label>
+          <select
+            id="age-filter"
+            className="field-select"
+            value={ageFilter}
+            onChange={(e) => setAgeFilter(e.target.value)}
+          >
+            <option value="All">Any</option>
+            <option value="Under10">Under 10</option>
+            <option value="10-13">10–13</option>
+            <option value="14-17">14–17</option>
+            <option value="18Plus">18+</option>
+          </select>
+        </div>
+        <div className="gallery-filter">
+          <label className="field-label" htmlFor="gender-filter">
+            Gender
+          </label>
+          <select
+            id="gender-filter"
+            className="field-select"
+            value={genderFilter}
+            onChange={(e) => setGenderFilter(e.target.value)}
+          >
+            <option value="All">Any</option>
+            <option value="Female">Girl / Female</option>
+            <option value="Male">Boy / Male</option>
+            <option value="NonBinary">Non-binary</option>
+          </select>
+        </div>
+        <div className="gallery-filter">
+          <label className="field-label" htmlFor="seeking-filter">
+            Seeking rep
+          </label>
+          <select
+            id="seeking-filter"
+            className="field-select"
+            value={seekingFilter}
+            onChange={(e) => setSeekingFilter(e.target.value)}
+          >
+            <option value="All">Any</option>
+            <option value="theatrical">Theatrical</option>
+            <option value="manager">Manager</option>
+            <option value="commercial">Commercial</option>
+            <option value="voice">Voiceover</option>
+            <option value="regional">Regional</option>
           </select>
         </div>
       </div>
