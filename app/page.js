@@ -1,5 +1,6 @@
 import { getSubmissions } from '../lib/airtable';
 import { TalentGallery } from '../components/TalentGallery';
+import Image from 'next/image';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,12 +11,25 @@ export default async function Page() {
     <main className="page">
       <header>
         <div className="hero-banner">
-          <img src="/11k.jpeg" alt="Child Actor 101 10K Strong Open Call" />
+          <Image
+            src="/11k.jpeg"
+            alt="Child Actor 101 10K Strong Open Call"
+            width={800}
+            height={600}
+            priority
+            style={{ width: '100%', height: 'auto' }}
+          />
         </div>
         <div className="page-header">
           <div className="hero-text">
             <div className="hero-brand-row">
-              <img src="/101logo.png" alt="Child Actor 101 logo" className="hero-logo" />
+              <Image
+                src="/101logo.png"
+                alt="Child Actor 101 logo"
+                className="hero-logo"
+                width={32}
+                height={32}
+              />
               <span className="brand">Child Actor 101</span>
             </div>
             <p className="eyebrow">Attention Youth Talent Agents and Managers!</p>
@@ -91,7 +105,13 @@ export default async function Page() {
               You can filter and search within the gallery link. Please let me know if you have any trouble at all!
             </p>
             <div className="signature">
-              <img src="/corey.jpeg" alt="Corey Ralston" className="signature-photo" />
+              <Image
+                src="/corey.jpeg"
+                alt="Corey Ralston"
+                className="signature-photo"
+                width={60}
+                height={60}
+              />
               <p className="signature-name">Corey Ralston</p>
               <p>Founder of Child Actor 101</p>
               <p>Director of Youth Talent for Bohemia Group</p>
