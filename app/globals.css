@@ -106,7 +106,7 @@ h1, h2, h3, h4, p {
   margin-bottom: 40px;
   box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
   border: 1px solid var(--border-glass);
-  max-width: 800px;
+  max-width: 500px;
   margin-left: auto;
   margin-right: auto;
 }
