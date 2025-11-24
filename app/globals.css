@@ -55,6 +55,19 @@ body {
   backdrop-filter: blur(32px);
 }
 
+.hero-banner {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 18px;
+}
+
+.hero-banner img {
+  width: min(100%, 640px);
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  box-shadow: var(--shadow-soft);
+}
+
 .page-header {
   display: flex;
   justify-content: space-between;
@@ -394,6 +407,15 @@ body {
   .page {
     padding: 18px 14px 20px;
     border-radius: 22px;
+  }
+
+  .hero-banner {
+    margin-bottom: 12px;
+  }
+
+  .hero-banner img {
+    width: 100%;
+    border-radius: 16px;
   }
 
   .page-header {
