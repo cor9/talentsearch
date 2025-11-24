@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
+import { useState } from "react";
 
 export function TalentModal({ talent, children }) {
   const [open, setOpen] = useState(false);
@@ -17,16 +17,20 @@ export function TalentModal({ talent, children }) {
             <header className="modal-header">
               <div>
                 <h3 className="modal-title">
-                  {talent.name || 'Untitled'}{' '}
+                  {talent.name || "Untitled"}{" "}
                   <span className="modal-union-pill">{talent.union}</span>
                 </h3>
                 <p className="modal-subtitle">
                   {talent.age && `${talent.age} years old`}
-                  {talent.age && talent.location ? ' • ' : ''}
+                  {talent.age && talent.location ? " • " : ""}
                   {talent.location}
                 </p>
               </div>
-              <button className="modal-close" type="button" onClick={() => setOpen(false)}>
+              <button
+                className="modal-close"
+                type="button"
+                onClick={() => setOpen(false)}
+              >
                 ✕
               </button>
             </header>
@@ -38,7 +42,9 @@ export function TalentModal({ talent, children }) {
                   <div className="modal-details-column">
                     {talent.stageName && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Stage / Birth Name</span>
+                        <span className="modal-detail-label">
+                          Stage / Birth Name
+                        </span>
                         <span>{talent.stageName}</span>
                       </p>
                     )}
@@ -56,13 +62,17 @@ export function TalentModal({ talent, children }) {
                     )}
                     {talent.genderIdentity && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Gender Identity</span>
+                        <span className="modal-detail-label">
+                          Gender Identity
+                        </span>
                         <span>{talent.genderIdentity}</span>
                       </p>
                     )}
                     {talent.ethnicity && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Actual + Perceived Ethnicity</span>
+                        <span className="modal-detail-label">
+                          Actual + Perceived Ethnicity
+                        </span>
                         <span>{talent.ethnicity}</span>
                       </p>
                     )}
@@ -82,25 +92,33 @@ export function TalentModal({ talent, children }) {
                     )}
                     {talent.localHireCities && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Local Hire Cities</span>
+                        <span className="modal-detail-label">
+                          Local Hire Cities
+                        </span>
                         <span>{talent.localHireCities}</span>
                       </p>
                     )}
                     {talent.representation && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Current Representation</span>
+                        <span className="modal-detail-label">
+                          Current Representation
+                        </span>
                         <span>{talent.representation}</span>
                       </p>
                     )}
                     {talent.seeking && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Seeking Representation</span>
+                        <span className="modal-detail-label">
+                          Seeking Representation
+                        </span>
                         <span>{talent.seeking}</span>
                       </p>
                     )}
                     {talent.castingProfiles && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Casting Profiles</span>
+                        <span className="modal-detail-label">
+                          Casting Profiles
+                        </span>
                         <span>{talent.castingProfiles}</span>
                       </p>
                     )}
@@ -113,8 +131,10 @@ export function TalentModal({ talent, children }) {
                   <div className="modal-details-extra">
                     {talent.cooganAccount && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Coogan Account</span>
-                        <span>{talent.cooganAccount}</span>
+                        <span className="modal-detail-label">
+                          Coogan Account
+                        </span>
+                        <span>Coogan Account</span>
                       </p>
                     )}
                     {talent.workPermits && (
@@ -126,12 +146,14 @@ export function TalentModal({ talent, children }) {
                     {talent.passport && (
                       <p className="modal-detail">
                         <span className="modal-detail-label">Passport</span>
-                        <span>{talent.passport}</span>
+                        <span>Has current passport</span>
                       </p>
                     )}
                     {talent.supplementalNotes && (
                       <p className="modal-detail">
-                        <span className="modal-detail-label">Supplemental Notes</span>
+                        <span className="modal-detail-label">
+                          Supplemental Notes
+                        </span>
                         <span>{talent.supplementalNotes}</span>
                       </p>
                     )}
@@ -161,9 +183,10 @@ export function TalentModal({ talent, children }) {
 
               <section className="modal-section">
                 <h4 className="modal-section-title">
-                  Photos {talent.allImages && talent.allImages.length
+                  Photos{" "}
+                  {talent.allImages && talent.allImages.length
                     ? `(${talent.allImages.length})`
-                    : ''}
+                    : ""}
                 </h4>
                 {talent.allImages && talent.allImages.length > 0 ? (
                   <div className="modal-photo-grid">
@@ -173,12 +196,17 @@ export function TalentModal({ talent, children }) {
                         className="modal-photo"
                         onClick={() => setActiveImage(img)}
                       >
-                        <img src={img} alt={`${talent.name} photo ${idx + 1}`} />
+                        <img
+                          src={img}
+                          alt={`${talent.name} photo ${idx + 1}`}
+                        />
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <p className="modal-empty">No photos available for this submission.</p>
+                  <p className="modal-empty">
+                    No photos available for this submission.
+                  </p>
                 )}
               </section>
 
@@ -215,7 +243,7 @@ export function TalentModal({ talent, children }) {
                   className="photo-lightbox-shell"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <img src={activeImage} alt={talent.name || 'Headshot'} />
+                  <img src={activeImage} alt={talent.name || "Headshot"} />
                 </div>
               </div>
             )}
@@ -225,5 +253,3 @@ export function TalentModal({ talent, children }) {
     </>
   );
 }
-
-
