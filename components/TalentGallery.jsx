@@ -16,8 +16,26 @@ export function TalentGallery({ data }) {
     return (data || []).filter((person) => {
       const union = person.union || '';
       const ageNum = typeof person.age === 'number' ? person.age : parseInt(person.age || '', 10);
-      const gender = (person.genderIdentity || '').toLowerCase();
+      const genderRaw = (person.genderIdentity || '').toLowerCase();
       const seeking = (person.seeking || '').toLowerCase();
+
+      // Normalize gender to avoid substring issues like "female" matching "male"
+      let normalizedGender = 'other';
+      if (genderRaw.includes('non') || genderRaw.includes('nb') || genderRaw.includes('they')) {
+        normalizedGender = 'nonbinary';
+      } else if (
+        genderRaw.includes('female') ||
+        genderRaw.includes('girl') ||
+        genderRaw.includes('she')
+      ) {
+        normalizedGender = 'female';
+      } else if (
+        genderRaw.includes('male') ||
+        genderRaw.includes('boy') ||
+        genderRaw.includes('he')
+      ) {
+        normalizedGender = 'male';
+      }
 
       const haystack = [
         person.name,
@@ -55,10 +73,9 @@ export function TalentGallery({ data }) {
       const matchesGender =
         genderFilter === 'All'
           ? true
-          : (genderFilter === 'Female' && (gender.includes('girl') || gender.includes('female'))) ||
-            (genderFilter === 'Male' && (gender.includes('boy') || gender.includes('male'))) ||
-            (genderFilter === 'NonBinary' &&
-              (gender.includes('non') || gender.includes('nb') || gender.includes('they')));
+          : (genderFilter === 'Female' && normalizedGender === 'female') ||
+            (genderFilter === 'Male' && normalizedGender === 'male') ||
+            (genderFilter === 'NonBinary' && normalizedGender === 'nonbinary');
 
       const matchesSeeking =
         seekingFilter === 'All'
