@@ -34,13 +34,6 @@ export default async function Page() {
                 connect with performers who match your current rosters and wish lists.
               </p>
             </div>
-            <div className="hero-card-footer">
-              <img src="/corey.jpeg" alt="Corey Ralston" className="hero-avatar" />
-              <div className="hero-avatar-text">
-                <p className="hero-avatar-name">Corey Ralston</p>
-                <p className="hero-avatar-title">Founder, Child Actor 101</p>
-              </div>
-            </div>
           </div>
         </div>
       </header>
@@ -77,6 +70,7 @@ export default async function Page() {
               You can filter and search within the gallery link. Please let me know if you have any trouble at all!
             </p>
             <div className="signature">
+              <img src="/corey.jpeg" alt="Corey Ralston" className="signature-photo" />
               <p className="signature-name">Corey Ralston</p>
               <p>Founder of Child Actor 101</p>
               <p>Director of Youth Talent for Bohemia Group</p>
