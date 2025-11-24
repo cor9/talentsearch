@@ -7,7 +7,6 @@ export function TalentModal({ talent, children }) {
   const [activeImage, setActiveImage] = useState(null);
   const [activeVideo, setActiveVideo] = useState(null);
   const [activeResume, setActiveResume] = useState(null);
-  const [activeCastingProfile, setActiveCastingProfile] = useState(null);
 
   const getEmbedUrl = (url) => {
     if (!url) return "";
@@ -253,13 +252,14 @@ export function TalentModal({ talent, children }) {
                   </button>
                 )}
                 {talent.profileLink && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveCastingProfile(talent.profileLink)}
+                  <a
+                    href={talent.profileLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="modal-button modal-button-secondary"
                   >
                     Casting Profile
-                  </button>
+                  </a>
                 )}
               </footer>
             </div>
@@ -330,30 +330,6 @@ export function TalentModal({ talent, children }) {
                   <iframe
                     src={activeResume}
                     title="Resume"
-                    className="resume-frame"
-                  ></iframe>
-                </div>
-              </div>
-            )}
-
-            {activeCastingProfile && (
-              <div
-                className="photo-lightbox-backdrop"
-                onClick={() => setActiveCastingProfile(null)}
-              >
-                <div
-                  className="photo-lightbox-shell resume-lightbox-shell"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <button
-                    className="lightbox-close"
-                    onClick={() => setActiveCastingProfile(null)}
-                  >
-                    ✕
-                  </button>
-                  <iframe
-                    src={activeCastingProfile}
-                    title="Casting Profile"
                     className="resume-frame"
                   ></iframe>
                 </div>
