@@ -5,6 +5,32 @@ import { useState } from "react";
 export function TalentModal({ talent, children }) {
   const [open, setOpen] = useState(false);
   const [activeImage, setActiveImage] = useState(null);
+  const [activeVideo, setActiveVideo] = useState(null);
+  const [activeResume, setActiveResume] = useState(null);
+
+  const getEmbedUrl = (url) => {
+    if (!url) return "";
+
+    // Handle YouTube
+    if (url.includes("youtube.com") || url.includes("youtu.be")) {
+      let videoId = "";
+      if (url.includes("youtu.be")) {
+        videoId = url.split("/").pop();
+      } else if (url.includes("v=")) {
+        videoId = url.split("v=")[1].split("&")[0];
+      }
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+    }
+
+    // Handle Vimeo
+    if (url.includes("vimeo.com")) {
+      const videoId = url.split("/").pop();
+      if (videoId && !isNaN(videoId)) return `https://player.vimeo.com/video/${videoId}`;
+    }
+
+    // Return original if no specific handler or already embeddable
+    return url;
+  };
 
   return (
     <>
@@ -172,16 +198,15 @@ export function TalentModal({ talent, children }) {
                   <h4 className="modal-section-title">Videos</h4>
                   <div className="modal-video-grid">
                     {talent.videos.map((video, idx) => (
-                      <a
+                      <button
                         key={idx}
-                        href={video.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        type="button"
+                        onClick={() => setActiveVideo(video)}
                         className="modal-video-link"
                       >
                         <span className="modal-video-icon">▶</span>
                         <span className="modal-video-label">{video.label}</span>
-                      </a>
+                      </button>
                     ))}
                   </div>
                 </section>
@@ -218,14 +243,13 @@ export function TalentModal({ talent, children }) {
 
               <footer className="modal-footer">
                 {talent.resume && (
-                  <a
-                    href={talent.resume}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    type="button"
+                    onClick={() => setActiveResume(talent.resume)}
                     className="modal-button modal-button-primary"
                   >
                     View Resume
-                  </a>
+                  </button>
                 )}
                 {talent.profileLink && (
                   <a
@@ -249,7 +273,65 @@ export function TalentModal({ talent, children }) {
                   className="photo-lightbox-shell"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <button
+                    className="lightbox-close"
+                    onClick={() => setActiveImage(null)}
+                  >
+                    ✕
+                  </button>
                   <img src={activeImage} alt={talent.name || "Headshot"} />
+                </div>
+              </div>
+            )}
+
+            {activeVideo && (
+              <div
+                className="photo-lightbox-backdrop"
+                onClick={() => setActiveVideo(null)}
+              >
+                <div
+                  className="photo-lightbox-shell video-lightbox-shell"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="lightbox-close"
+                    onClick={() => setActiveVideo(null)}
+                  >
+                    ✕
+                  </button>
+                  <div className="video-container">
+                    <iframe
+                      src={getEmbedUrl(activeVideo.url)}
+                      title={activeVideo.label}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeResume && (
+              <div
+                className="photo-lightbox-backdrop"
+                onClick={() => setActiveResume(null)}
+              >
+                <div
+                  className="photo-lightbox-shell resume-lightbox-shell"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="lightbox-close"
+                    onClick={() => setActiveResume(null)}
+                  >
+                    ✕
+                  </button>
+                  <iframe
+                    src={activeResume}
+                    title="Resume"
+                    className="resume-frame"
+                  ></iframe>
                 </div>
               </div>
             )}
