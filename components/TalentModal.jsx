@@ -146,14 +146,6 @@ export function TalentModal({ talent, children }) {
                         <span>{talent.seeking}</span>
                       </p>
                     )}
-                    {talent.castingProfiles && (
-                      <p className="modal-detail">
-                        <span className="modal-detail-label">
-                          Casting Profiles
-                        </span>
-                        <span>{talent.castingProfiles}</span>
-                      </p>
-                    )}
                   </div>
                 </div>
                 {(talent.cooganAccount ||
@@ -279,6 +271,30 @@ export function TalentModal({ talent, children }) {
                   >
                     ✕
                   </button>
+                  {talent.allImages && talent.allImages.length > 1 && (
+                    <>
+                      <button
+                        className="lightbox-nav lightbox-nav-prev"
+                        onClick={() => {
+                          const currentIndex = talent.allImages.indexOf(activeImage);
+                          const prevIndex = currentIndex === 0 ? talent.allImages.length - 1 : currentIndex - 1;
+                          setActiveImage(talent.allImages[prevIndex]);
+                        }}
+                      >
+                        ‹
+                      </button>
+                      <button
+                        className="lightbox-nav lightbox-nav-next"
+                        onClick={() => {
+                          const currentIndex = talent.allImages.indexOf(activeImage);
+                          const nextIndex = currentIndex === talent.allImages.length - 1 ? 0 : currentIndex + 1;
+                          setActiveImage(talent.allImages[nextIndex]);
+                        }}
+                      >
+                        ›
+                      </button>
+                    </>
+                  )}
                   <img src={activeImage} alt={talent.name || "Headshot"} />
                 </div>
               </div>
