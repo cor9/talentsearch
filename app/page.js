@@ -46,7 +46,8 @@ export default async function Page() {
             rel="noreferrer"
             className="nav-button"
           >
-            Home – ChildActor101.com
+            <img src="/101logo.png" alt="Child Actor 101" className="nav-button-icon" />
+            <span>Home – ChildActor101.com</span>
           </a>
           <a
             href="https://directory.childactor101.com"
@@ -54,7 +55,8 @@ export default async function Page() {
             rel="noreferrer"
             className="nav-button nav-button-secondary"
           >
-            Child Actor 101 Industry Directory
+            <img src="/logo.png" alt="Industry Directory" className="nav-button-icon" />
+            <span>Child Actor 101 Industry Directory</span>
           </a>
         </div>
 
