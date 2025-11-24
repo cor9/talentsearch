@@ -411,6 +411,20 @@ body {
     padding: 0 4px;
   }
 
+  .modal-shell {
+    max-width: 100%;
+    border-radius: 18px;
+    padding: 12px 12px 14px;
+  }
+
+  .modal-body {
+    max-height: calc(90vh - 60px);
+  }
+
+  .modal-details-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .table-footnote {
     flex-direction: column;
     align-items: flex-start;
@@ -655,7 +669,7 @@ body {
 
 .modal-title {
   margin: 0 0 2px;
-  font-size: 1.05rem;
+  font-size: 1.25rem;
   letter-spacing: 0.02em;
   color: #e5e7eb;
 }
@@ -676,7 +690,7 @@ body {
 
 .modal-subtitle {
   margin: 0;
-  font-size: 0.82rem;
+  font-size: 0.9rem;
   color: var(--text-subtle);
 }
 
@@ -700,7 +714,7 @@ body {
 
 .modal-section-title {
   margin: 0 0 6px;
-  font-size: 0.88rem;
+  font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: #e5e7eb;
@@ -721,14 +735,14 @@ body {
 
 .modal-detail {
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.9rem;
   color: var(--text-soft);
   display: flex;
   flex-direction: column;
 }
 
 .modal-detail-label {
-  font-size: 0.72rem;
+  font-size: 0.78rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--text-subtle);
