@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 export function TalentModal({ talent, children }) {
   const [open, setOpen] = useState(false);
+  const [activeImage, setActiveImage] = useState(null);
 
   return (
     <>
@@ -167,7 +168,11 @@ export function TalentModal({ talent, children }) {
                 {talent.allImages && talent.allImages.length > 0 ? (
                   <div className="modal-photo-grid">
                     {talent.allImages.map((img, idx) => (
-                      <div key={idx} className="modal-photo">
+                      <div
+                        key={idx}
+                        className="modal-photo"
+                        onClick={() => setActiveImage(img)}
+                      >
                         <img src={img} alt={`${talent.name} photo ${idx + 1}`} />
                       </div>
                     ))}
@@ -200,6 +205,20 @@ export function TalentModal({ talent, children }) {
                 )}
               </footer>
             </div>
+
+            {activeImage && (
+              <div
+                className="photo-lightbox-backdrop"
+                onClick={() => setActiveImage(null)}
+              >
+                <div
+                  className="photo-lightbox-shell"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <img src={activeImage} alt={talent.name || 'Headshot'} />
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
