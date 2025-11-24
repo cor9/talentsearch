@@ -8,10 +8,34 @@ export function TalentGallery({ data }) {
   const [unionFilter, setUnionFilter] = useState('All');
 
   const filteredTalent = useMemo(() => {
+    const searchLower = search.toLowerCase();
+
     return (data || []).filter((person) => {
-      const name = (person.name || '').toLowerCase();
       const union = person.union || '';
-      const matchesSearch = name.includes(search.toLowerCase());
+
+      const haystack = [
+        person.name,
+        person.stageName,
+        person.guardianName,
+        person.birthday,
+        person.age && String(person.age),
+        person.genderIdentity,
+        person.ethnicity,
+        person.email,
+        person.phone,
+        person.location,
+        person.localHireCities,
+        person.representation,
+        person.seeking,
+        person.castingProfiles,
+        person.profileLink,
+        person.supplementalNotes
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      const matchesSearch = haystack.includes(searchLower);
       const matchesUnion = unionFilter === 'All' || union.includes(unionFilter);
       return matchesSearch && matchesUnion;
     });
@@ -22,12 +46,12 @@ export function TalentGallery({ data }) {
       <div className="gallery-controls">
         <div className="gallery-search">
           <label className="field-label" htmlFor="talent-search">
-            Search by name
+            Search talent
           </label>
           <input
             id="talent-search"
             className="field-input"
-            placeholder="Start typing an actor's name..."
+            placeholder="Search by name, city, rep, email, notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
