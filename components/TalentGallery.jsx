@@ -19,23 +19,14 @@ export function TalentGallery({ data }) {
       const genderRaw = (person.genderIdentity || '').toLowerCase().trim();
       const seeking = (person.seeking || '').toLowerCase();
 
-      // Normalize gender to avoid substring issues like "female" matching "male"
+      // Normalize gender to strict buckets based on Gender Identity field:
+      // expected values: "Male", "Female", "Non-binary/Other"
       let normalizedGender = 'other';
-      if (genderRaw.includes('non') || genderRaw.includes('nb') || genderRaw.includes('they')) {
+      if (genderRaw.startsWith('non') || genderRaw.includes('other')) {
         normalizedGender = 'nonbinary';
-      } else if (
-        genderRaw.startsWith('f') ||
-        genderRaw.includes('female') ||
-        genderRaw.includes('girl') ||
-        genderRaw.includes('she')
-      ) {
+      } else if (genderRaw.startsWith('f') || genderRaw.includes('female')) {
         normalizedGender = 'female';
-      } else if (
-        genderRaw.startsWith('m') ||
-        genderRaw.includes('male') ||
-        genderRaw.includes('boy') ||
-        genderRaw.includes('he')
-      ) {
+      } else if (genderRaw.startsWith('m') || genderRaw.includes('male')) {
         normalizedGender = 'male';
       }
 
