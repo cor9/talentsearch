@@ -39,6 +39,25 @@ export default async function Page() {
       </header>
 
       <section className="page-section">
+        <div className="nav-links">
+          <a
+            href="https://childactor101.com"
+            target="_blank"
+            rel="noreferrer"
+            className="nav-button"
+          >
+            Home – ChildActor101.com
+          </a>
+          <a
+            href="https://directory.childactor101.com"
+            target="_blank"
+            rel="noreferrer"
+            className="nav-button nav-button-secondary"
+          >
+            Child Actor 101 Industry Directory
+          </a>
+        </div>
+
         <div className="copy-grid">
           <div className="copy-block">
             <p>
