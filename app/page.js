@@ -1,68 +1,61 @@
-import fs from 'fs';
-import path from 'path';
-
-// Simple CSV line splitter that respects quoted values.
-function splitCsvLine(line) {
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-
-  for (let i = 0; i < line.length; i += 1) {
-    const char = line[i];
-    const nextChar = line[i + 1];
-
-    if (char === '"') {
-      if (inQuotes && nextChar === '"') {
-        // Escaped quote
-        current += '"';
-        i += 1;
-      } else {
-        inQuotes = !inQuotes;
-      }
-    } else if (char === ',' && !inQuotes) {
-      result.push(current);
-      current = '';
-    } else {
-      current += char;
-    }
-  }
-
-  result.push(current);
-  return result.map((cell) => cell.trim());
-}
-
-function parseCsv(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length === 0) {
-    return { headers: [], rows: [] };
-  }
-
-  const headers = splitCsvLine(lines[0]);
-  const rows = lines.slice(1).map((line) => {
-    const values = splitCsvLine(line);
-    const row = {};
-    headers.forEach((header, index) => {
-      row[header] = values[index] ?? '';
-    });
-    return row;
-  });
-
-  return { headers, rows };
-}
+export const dynamic = 'force-dynamic';
 
 async function loadTalentData() {
-  const filePath = path.join(process.cwd(), 'Talent Submissions-Grid view.csv');
+  const apiKey = process.env.AIRTABLE_API_KEY;
+  const baseId = process.env.AIRTABLE_BASE_ID;
+  const tableIdOrName = process.env.AIRTABLE_TABLE_ID || process.env.AIRTABLE_TABLE_NAME;
+  const viewName = process.env.AIRTABLE_VIEW || 'Grid view';
 
-  try {
-    const fileContent = await fs.promises.readFile(filePath, 'utf8');
-    const { headers, rows } = parseCsv(fileContent);
-    return { headers, rows, error: null };
-  } catch (error) {
-    console.error('Failed to read talent CSV', error);
+  if (!apiKey || !baseId || !tableIdOrName) {
     return {
       headers: [],
       rows: [],
-      error: 'We could not load the talent data. Please check that the CSV file exists in the project root.'
+      error:
+        'Airtable environment variables are missing. Please set AIRTABLE_API_KEY, AIRTABLE_BASE_ID, and AIRTABLE_TABLE_ID or AIRTABLE_TABLE_NAME.'
+    };
+  }
+
+  const url = `https://api.airtable.com/v0/${baseId}/${encodeURIComponent(
+    tableIdOrName
+  )}?view=${encodeURIComponent(viewName)}`;
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${apiKey}`
+      },
+      cache: 'no-store'
+    });
+
+    if (!res.ok) {
+      console.error('Airtable API error', res.status, res.statusText);
+      return {
+        headers: [],
+        rows: [],
+        error: `We could not load talent data from Airtable (status ${res.status}).`
+      };
+    }
+
+    const data = await res.json();
+    const records = Array.isArray(data.records) ? data.records : [];
+
+    const headerSet = new Set();
+    records.forEach((record) => {
+      const fields = record.fields || {};
+      Object.keys(fields).forEach((key) => headerSet.add(key));
+    });
+
+    const headers = Array.from(headerSet);
+    const rows = records.map((record) => record.fields || {});
+
+    return { headers, rows, error: null };
+  } catch (error) {
+    console.error('Failed to fetch Airtable data', error);
+    return {
+      headers: [],
+      rows: [],
+      error: 'We could not load talent data from Airtable.'
     };
   }
 }
