@@ -843,13 +843,13 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 20px;
+  padding: 32px;
   z-index: 60;
 }
 
 .photo-lightbox-shell {
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: min(720px, 90vw);
+  max-height: 80vh;
   border-radius: 16px;
   border: 1px solid rgba(148, 163, 184, 0.9);
   background: #020617;
@@ -859,8 +859,9 @@ body {
 
 .photo-lightbox-shell img {
   display: block;
-  max-width: 100%;
-  max-height: 100%;
+  width: 100%;
+  height: auto;
+  max-height: 80vh;
   object-fit: contain;
 }
 
