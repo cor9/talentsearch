@@ -21,6 +21,7 @@ Video Embedding Behavior
 ------------------------
 - The `TalentModal` component normalizes URLs before embedding:
   - YouTube and Vimeo links are converted to their respective embed URLs, including support for standard watch URLs, `youtu.be` short links, Shorts, Live URLs, and playlist links.
+  - If a YouTube URL cannot be safely converted into an embed (for example, channel or studio URLs), the modal falls back to showing an “open video in new tab” link instead of a broken iframe.
   - Dropbox share links are converted to `dl.dropboxusercontent.com` direct file URLs for inline playback (avoids forced downloads).
   - Google Drive share links are converted to use the `/file/d/{id}/preview` pattern for iframe-safe playback.
   - Bare domains or URLs without `http(s)://` are automatically prefixed with `https://` so parent-entered values like `drive.google.com/...` still work.

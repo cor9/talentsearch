@@ -111,6 +111,10 @@ export function TalentModal({ talent, children }) {
         const listId = listMatch[1];
         return `https://www.youtube.com/embed/videoseries?list=${listId}`;
       }
+
+      // If it's a YouTube URL we can't safely embed (channel, studio, etc.),
+      // return empty string so we can fall back to an "open in new tab" link.
+      return "";
     }
 
     // Handle Vimeo
@@ -448,13 +452,29 @@ export function TalentModal({ talent, children }) {
                     ✕
                   </button>
                   <div className="video-container">
-                    <iframe
-                      src={getEmbedUrl(activeVideo.url)}
-                      title={activeVideo.label}
-                      frameBorder="0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    ></iframe>
+                    {getEmbedUrl(activeVideo.url) ? (
+                      <iframe
+                        src={getEmbedUrl(activeVideo.url)}
+                        title={activeVideo.label}
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    ) : (
+                      <div className="modal-video-fallback">
+                        <p>
+                          We couldn&apos;t embed this video here, but you can
+                          open it directly:
+                        </p>
+                        <a
+                          href={normalizeUrl(activeVideo.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          Open video in new tab
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
