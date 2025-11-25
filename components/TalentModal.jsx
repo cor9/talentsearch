@@ -8,28 +8,120 @@ export function TalentModal({ talent, children }) {
   const [activeVideo, setActiveVideo] = useState(null);
   const [activeResume, setActiveResume] = useState(null);
 
+  const normalizeUrl = (url) => {
+    if (!url) return "";
+    const trimmed = url.trim();
+
+    // Already has protocol
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    // Protocol-relative
+    if (/^\/\//.test(trimmed)) return `https:${trimmed}`;
+
+    // Bare domains or paths -> assume https
+    return `https://${trimmed}`;
+  };
+
+  const linkifyText = (text) => {
+    if (!text || typeof text !== "string") return text;
+
+    const urlRegex =
+      /((https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*)/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+
+    while ((match = urlRegex.exec(text)) !== null) {
+      const [fullMatch] = match;
+      const start = match.index;
+
+      if (start > lastIndex) {
+        parts.push(text.slice(lastIndex, start));
+      }
+
+      const href = normalizeUrl(fullMatch);
+      parts.push(
+        <a
+          key={`link-${start}`}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {fullMatch}
+        </a>
+      );
+
+      lastIndex = start + fullMatch.length;
+    }
+
+    if (lastIndex < text.length) {
+      parts.push(text.slice(lastIndex));
+    }
+
+    return parts.length > 0 ? parts : text;
+  };
+
   const getEmbedUrl = (url) => {
     if (!url) return "";
+    const normalized = normalizeUrl(url);
 
     // Handle YouTube
-    if (url.includes("youtube.com") || url.includes("youtu.be")) {
+    if (normalized.includes("youtube.com") || normalized.includes("youtu.be")) {
       let videoId = "";
-      if (url.includes("youtu.be")) {
-        videoId = url.split("/").pop();
-      } else if (url.includes("v=")) {
-        videoId = url.split("v=")[1].split("&")[0];
+      if (normalized.includes("youtu.be")) {
+        videoId = normalized.split("/").pop();
+      } else if (normalized.includes("v=")) {
+        videoId = normalized.split("v=")[1].split("&")[0];
       }
       if (videoId) return `https://www.youtube.com/embed/${videoId}`;
     }
 
     // Handle Vimeo
-    if (url.includes("vimeo.com")) {
-      const videoId = url.split("/").pop();
-      if (videoId && !isNaN(videoId)) return `https://player.vimeo.com/video/${videoId}`;
+    if (normalized.includes("vimeo.com")) {
+      const videoId = normalized.split("/").pop();
+      if (videoId && !isNaN(videoId))
+        return `https://player.vimeo.com/video/${videoId}`;
+    }
+
+    // Handle Dropbox share links
+    // Dropbox often uses ?dl=0 / ?dl=1 for sharing; for direct media playback we prefer ?raw=1
+    if (url.includes("dropbox.com")) {
+      if (url.includes("raw=1")) return url;
+
+      let cleanUrl = url
+        .replace("?dl=0", "")
+        .replace("?dl=1", "")
+        .replace("&dl=0", "")
+        .replace("&dl=1", "");
+
+      if (cleanUrl.includes("?")) {
+        return `${cleanUrl}&raw=1`;
+      }
+
+      return `${cleanUrl}?raw=1`;
+    }
+
+    // Handle Google Drive share links
+    // Typical pattern: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    if (normalized.includes("drive.google.com")) {
+      // Already a preview URL
+      if (normalized.includes("/preview")) return normalized;
+
+      const fileMatch = normalized.match(/\/file\/d\/([^/]+)/);
+      if (fileMatch && fileMatch[1]) {
+        const fileId = fileMatch[1];
+        return `https://drive.google.com/file/d/${fileId}/preview`;
+      }
+
+      // Fallback for open?id= style URLs
+      const idMatch = normalized.match(/[?&]id=([^&]+)/);
+      if (idMatch && idMatch[1]) {
+        const fileId = idMatch[1];
+        return `https://drive.google.com/file/d/${fileId}/preview`;
+      }
     }
 
     // Return original if no specific handler or already embeddable
-    return url;
+    return normalized;
   };
 
   return (
@@ -178,7 +270,7 @@ export function TalentModal({ talent, children }) {
                         <span className="modal-detail-label">
                           Supplemental Notes
                         </span>
-                        <span>{talent.supplementalNotes}</span>
+                        <span>{linkifyText(talent.supplementalNotes)}</span>
                       </p>
                     )}
                   </div>
@@ -245,7 +337,7 @@ export function TalentModal({ talent, children }) {
                 )}
                 {talent.profileLink && (
                   <a
-                    href={talent.profileLink}
+                    href={normalizeUrl(talent.profileLink)}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="modal-button modal-button-secondary"
@@ -267,8 +359,12 @@ export function TalentModal({ talent, children }) {
                       className="lightbox-nav lightbox-nav-prev"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const currentIndex = talent.allImages.indexOf(activeImage);
-                        const prevIndex = currentIndex === 0 ? talent.allImages.length - 1 : currentIndex - 1;
+                        const currentIndex =
+                          talent.allImages.indexOf(activeImage);
+                        const prevIndex =
+                          currentIndex === 0
+                            ? talent.allImages.length - 1
+                            : currentIndex - 1;
                         setActiveImage(talent.allImages[prevIndex]);
                       }}
                     >
@@ -278,8 +374,12 @@ export function TalentModal({ talent, children }) {
                       className="lightbox-nav lightbox-nav-next"
                       onClick={(e) => {
                         e.stopPropagation();
-                        const currentIndex = talent.allImages.indexOf(activeImage);
-                        const nextIndex = currentIndex === talent.allImages.length - 1 ? 0 : currentIndex + 1;
+                        const currentIndex =
+                          talent.allImages.indexOf(activeImage);
+                        const nextIndex =
+                          currentIndex === talent.allImages.length - 1
+                            ? 0
+                            : currentIndex + 1;
                         setActiveImage(talent.allImages[nextIndex]);
                       }}
                     >
@@ -346,7 +446,7 @@ export function TalentModal({ talent, children }) {
                     ✕
                   </button>
                   <iframe
-                    src={activeResume}
+                    src={getEmbedUrl(activeResume)}
                     title="Resume"
                     className="resume-frame"
                   ></iframe>

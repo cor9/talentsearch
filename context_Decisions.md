@@ -17,6 +17,15 @@ UI & Styling Decisions
 - The hero section and copy blocks on the main page are styled with a premium, marketing-focused look (accent gradient headings, pill badges, subtle glassmorphism).
 - The initial data presentation is a scrollable, sticky-header table that matches the dark theme and uses subtle hover states.
 
+Video Embedding Behavior
+------------------------
+- The `TalentModal` component normalizes URLs before embedding:
+  - YouTube and Vimeo links are converted to their respective embed URLs.
+  - Dropbox share links are converted to use `?raw=1` for direct media playback.
+  - Google Drive share links are converted to use the `/file/d/{id}/preview` pattern for iframe-safe playback.
+  - Bare domains or URLs without `http(s)://` are automatically prefixed with `https://` so parent-entered values like `drive.google.com/...` still work.
+  - Supplemental notes text is "linkified" so that recognizable URLs become clickable links, even if they were entered without a protocol.
+
 Deployment & Workflow
 ---------------------
 - Code changes should be committed and pushed to `main`; Vercel is expected to auto-deploy on each push to this branch.
