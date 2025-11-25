@@ -66,13 +66,51 @@ export function TalentModal({ talent, children }) {
 
     // Handle YouTube
     if (normalized.includes("youtube.com") || normalized.includes("youtu.be")) {
+      // Already an embed URL
+      if (normalized.includes("/embed/")) return normalized;
+
       let videoId = "";
-      if (normalized.includes("youtu.be")) {
-        videoId = normalized.split("/").pop();
-      } else if (normalized.includes("v=")) {
-        videoId = normalized.split("v=")[1].split("&")[0];
+
+      // Standard watch URLs with v=
+      const vParamMatch = normalized.match(/[?&]v=([^&]+)/);
+      if (vParamMatch && vParamMatch[1]) {
+        videoId = vParamMatch[1];
       }
-      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+
+      // Short youtu.be links
+      if (!videoId && normalized.includes("youtu.be/")) {
+        const match = normalized.match(/youtu\.be\/([^?&]+)/);
+        if (match && match[1]) {
+          videoId = match[1];
+        }
+      }
+
+      // Shorts URLs
+      if (!videoId && normalized.includes("/shorts/")) {
+        const match = normalized.match(/\/shorts\/([^?&/]+)/);
+        if (match && match[1]) {
+          videoId = match[1];
+        }
+      }
+
+      // Live URLs
+      if (!videoId && normalized.includes("/live/")) {
+        const match = normalized.match(/\/live\/([^?&/]+)/);
+        if (match && match[1]) {
+          videoId = match[1];
+        }
+      }
+
+      if (videoId) {
+        return `https://www.youtube.com/embed/${videoId}`;
+      }
+
+      // Playlist-only URLs (no v=), e.g. playlist view
+      const listMatch = normalized.match(/[?&]list=([^&]+)/);
+      if (listMatch && listMatch[1]) {
+        const listId = listMatch[1];
+        return `https://www.youtube.com/embed/videoseries?list=${listId}`;
+      }
     }
 
     // Handle Vimeo
