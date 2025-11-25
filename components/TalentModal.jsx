@@ -83,21 +83,13 @@ export function TalentModal({ talent, children }) {
     }
 
     // Handle Dropbox share links
-    // Dropbox often uses ?dl=0 / ?dl=1 for sharing; for direct media playback we prefer ?raw=1
-    if (url.includes("dropbox.com")) {
-      if (url.includes("raw=1")) return url;
-
-      let cleanUrl = url
-        .replace("?dl=0", "")
-        .replace("?dl=1", "")
-        .replace("&dl=0", "")
-        .replace("&dl=1", "");
-
-      if (cleanUrl.includes("?")) {
-        return `${cleanUrl}&raw=1`;
-      }
-
-      return `${cleanUrl}?raw=1`;
+    // Convert share URLs to dl.dropboxusercontent.com direct links for inline playback
+    if (normalized.includes("dropbox.com")) {
+      const [base] = normalized.split("?");
+      const direct = base
+        .replace("www.dropbox.com", "dl.dropboxusercontent.com")
+        .replace("://dropbox.com", "://dl.dropboxusercontent.com");
+      return direct;
     }
 
     // Handle Google Drive share links
