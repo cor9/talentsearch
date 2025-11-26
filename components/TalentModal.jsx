@@ -126,9 +126,9 @@ export function TalentModal({ talent, children }) {
 
     // Handle Dropbox share links
     // Convert share URLs to dl.dropboxusercontent.com direct links for inline playback
+    // CRITICAL: Must preserve query parameters (rlkey, st, etc.) for authentication
     if (normalized.includes("dropbox.com")) {
-      const [base] = normalized.split("?");
-      const direct = base
+      const direct = normalized
         .replace("www.dropbox.com", "dl.dropboxusercontent.com")
         .replace("://dropbox.com", "://dl.dropboxusercontent.com");
       return direct;
