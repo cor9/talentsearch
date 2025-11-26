@@ -126,18 +126,32 @@ export function TalentModal({ talent, children }) {
 
     // Handle Dropbox share links
     // Convert share URLs to dl.dropboxusercontent.com direct links for inline playback
-    // CRITICAL: Preserve query parameters (rlkey, st, etc.) for authentication
     if (normalized.includes("dropbox.com")) {
-      const direct = normalized
+      const [base] = normalized.split("?");
+      const direct = base
         .replace("www.dropbox.com", "dl.dropboxusercontent.com")
         .replace("://dropbox.com", "://dl.dropboxusercontent.com");
       return direct;
     }
 
     // Handle Google Drive share links
-    // Don't modify Drive URLs - they work fine as-is with their sharing permissions
+    // Typical pattern: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
     if (normalized.includes("drive.google.com")) {
-      return normalized;
+      // Already a preview URL
+      if (normalized.includes("/preview")) return normalized;
+
+      const fileMatch = normalized.match(/\/file\/d\/([^/]+)/);
+      if (fileMatch && fileMatch[1]) {
+        const fileId = fileMatch[1];
+        return `https://drive.google.com/file/d/${fileId}/preview`;
+      }
+
+      // Fallback for open?id= style URLs
+      const idMatch = normalized.match(/[?&]id=([^&]+)/);
+      if (idMatch && idMatch[1]) {
+        const fileId = idMatch[1];
+        return `https://drive.google.com/file/d/${idMatch[1]}/preview`;
+      }
     }
 
     // Return original if no specific handler or already embeddable
