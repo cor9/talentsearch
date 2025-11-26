@@ -125,18 +125,40 @@ export function TalentModal({ talent, children }) {
     }
 
     // Handle Dropbox share links
-    // Convert share URLs to dl.dropboxusercontent.com direct links for inline playback
-    // CRITICAL: Preserve query parameters (rlkey, st, etc.) for authentication
+    // Convert to dl.dropboxusercontent.com and ensure raw=1 for video playback
+    // CRITICAL: Preserve auth params (rlkey, st, etc.)
     if (normalized.includes("dropbox.com")) {
-      const direct = normalized
+      let direct = normalized
         .replace("www.dropbox.com", "dl.dropboxusercontent.com")
         .replace("://dropbox.com", "://dl.dropboxusercontent.com");
+
+      // Ensure raw=1 for direct video playback (not download)
+      if (!direct.includes("raw=1")) {
+        const separator = direct.includes("?") ? "&" : "?";
+        direct += `${separator}raw=1`;
+      }
       return direct;
     }
 
     // Handle Google Drive share links
-    // Don't modify Drive URLs - they work fine as-is with their sharing permissions
+    // Convert to /preview format required for iframe embedding
     if (normalized.includes("drive.google.com")) {
+      // Already a preview URL
+      if (normalized.includes("/preview")) return normalized;
+
+      // Extract file ID from /file/d/{fileId}/ pattern
+      const fileMatch = normalized.match(/\/file\/d\/([^/?]+)/);
+      if (fileMatch && fileMatch[1]) {
+        return `https://drive.google.com/file/d/${fileMatch[1]}/preview`;
+      }
+
+      // Fallback for open?id= style URLs
+      const idMatch = normalized.match(/[?&]id=([^&]+)/);
+      if (idMatch && idMatch[1]) {
+        return `https://drive.google.com/file/d/${idMatch[1]}/preview`;
+      }
+
+      // Return as-is if we can't parse it
       return normalized;
     }
 
