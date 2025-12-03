@@ -119,9 +119,12 @@ export function TalentModal({ talent, children }) {
 
     // Handle Vimeo
     if (normalized.includes("vimeo.com")) {
-      const videoId = normalized.split("/").pop();
-      if (videoId && !isNaN(videoId))
-        return `https://player.vimeo.com/video/${videoId}`;
+      // Extract video ID from various Vimeo URL formats
+      // Examples: vimeo.com/123456789, vimeo.com/123456789?query=params
+      const match = normalized.match(/vimeo\.com\/(\d+)/);
+      if (match && match[1]) {
+        return `https://player.vimeo.com/video/${match[1]}`;
+      }
     }
 
     // Handle Dropbox share links
