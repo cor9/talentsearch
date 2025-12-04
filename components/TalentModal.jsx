@@ -119,11 +119,56 @@ export function TalentModal({ talent, children }) {
 
     // Handle Vimeo
     if (normalized.includes("vimeo.com")) {
-      // Extract video ID from various Vimeo URL formats
-      // Examples: vimeo.com/123456789, vimeo.com/123456789?query=params
-      const match = normalized.match(/vimeo\.com\/(\d+)/);
-      if (match && match[1]) {
-        return `https://player.vimeo.com/video/${match[1]}`;
+      // Skip user profile pages - these can't be embedded
+      if (normalized.includes("/user")) {
+        return "";
+      }
+
+      // Parse the URL to handle query params
+      let urlPath;
+      try {
+        const urlObj = new URL(normalized);
+        urlPath = urlObj.pathname;
+      } catch {
+        urlPath = normalized.replace(/^https?:\/\/[^/]+/, "");
+      }
+
+      // Remove leading/trailing slashes and split
+      const pathParts = urlPath.replace(/^\/+|\/+$/g, "").split("/");
+
+      // Vimeo video URLs can be:
+      // - /123456789 (public video)
+      // - /123456789/abcdef123 (private/unlisted video with hash)
+      // - /video/123456789 (alternative format)
+      // - /channels/channelname/123456789
+
+      let videoId = "";
+      let privateHash = "";
+
+      // Find the numeric video ID in the path
+      for (let i = 0; i < pathParts.length; i++) {
+        const part = pathParts[i];
+        // Skip known non-video segments
+        if (["video", "channels", "groups", "album", "showcase"].includes(part)) {
+          continue;
+        }
+        // Found a numeric ID
+        if (/^\d+$/.test(part)) {
+          videoId = part;
+          // Check if next part is a private hash (alphanumeric, not purely numeric)
+          if (pathParts[i + 1] && /^[a-zA-Z0-9]+$/.test(pathParts[i + 1]) && !/^\d+$/.test(pathParts[i + 1])) {
+            privateHash = pathParts[i + 1];
+          }
+          break;
+        }
+      }
+
+      if (videoId) {
+        // If there's a private hash, include it as h= parameter
+        if (privateHash) {
+          return `https://player.vimeo.com/video/${videoId}?h=${privateHash}`;
+        }
+        return `https://player.vimeo.com/video/${videoId}`;
       }
     }
 
@@ -141,7 +186,42 @@ export function TalentModal({ talent, children }) {
       return "";
     }
 
-    // Return original if no specific handler or already embeddable
+    // Handle OneDrive share links
+    // OneDrive requires authentication that doesn't work in iframes
+    // Return empty to trigger "open in new tab" fallback
+    if (normalized.includes("onedrive.live.com") || normalized.includes("1drv.ms")) {
+      return "";
+    }
+
+    // Handle Sync.com links (file sharing service, can't embed)
+    if (normalized.includes("sync.com")) {
+      return "";
+    }
+
+    // Only embed URLs from known video platforms
+    // If it's not a recognized platform, return empty to show "open in new tab" fallback
+    const knownVideoPatterns = [
+      "youtube.com",
+      "youtu.be",
+      "vimeo.com",
+      "player.vimeo.com",
+      "dailymotion.com",
+      "wistia.com",
+      "loom.com",
+      "streamable.com",
+    ];
+
+    const isKnownVideoPlatform = knownVideoPatterns.some((pattern) =>
+      normalized.includes(pattern)
+    );
+
+    if (!isKnownVideoPlatform) {
+      // Return empty for unknown platforms or invalid URLs
+      // This triggers the "open in new tab" fallback
+      return "";
+    }
+
+    // Return original if already embeddable
     return normalized;
   };
 
