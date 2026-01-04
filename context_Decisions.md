@@ -1,7 +1,7 @@
 Next.js & Project Structure
 ---------------------------
 - The Next.js app lives at the repository root (this directory), with `app/` using the App Router.
-- `package.json` at the root defines `next@14.2.0`, `react@18.2.0`, and related scripts (`dev`, `build`, `start`, `lint`).
+- `package.json` at the root defines `next@14.2.35`, `react@18.2.0`, and related scripts (`dev`, `build`, `start`, `lint`).
 - Vercel should use the repo root as the Project Root Directory (leave this setting empty in Vercel when the app is at the repo root).
 
 Data Source for Talent Page
