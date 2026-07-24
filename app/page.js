@@ -1,11 +1,79 @@
-import { getSubmissions } from '../lib/airtable';
-import { TalentGallery } from '../components/TalentGallery';
-import Image from 'next/image';
+import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
+import { getSubmissions } from '../lib/airtable'
+import { verifySession, COOKIE_NAME } from '../lib/session'
+import { findInviteById, findEventById, getFavorites } from '../lib/supabase-p101'
+import { TalentGallery } from '../components/TalentGallery'
+import Image from 'next/image'
 
-export const dynamic = 'force-dynamic';
+export const dynamic = 'force-dynamic'
 
 export default async function Page() {
-  const { submissions, error } = await getSubmissions();
+  // ─── Session verification ─────────────────────────────────────────────────
+  // Middleware already checked cookie signature; here we do the full DB check.
+  const cookieStore = cookies()
+  const sessionValue = cookieStore.get(COOKIE_NAME)?.value
+  const secret = process.env.TALENTSEARCH_SESSION_SECRET
+
+  const session = verifySession(sessionValue, secret)
+  if (!session) {
+    redirect('/denied')
+  }
+
+  // Full revocation + expiry check against Supabase
+  let invite
+  try {
+    invite = await findInviteById(session.iid)
+  } catch {
+    redirect('/denied')
+  }
+
+  if (!invite || invite.revoked_at) {
+    redirect('/denied?r=revoked')
+  }
+  if (new Date(invite.expires_at) <= new Date()) {
+    redirect('/denied?r=expired')
+  }
+  // Verify invite belongs to the session's event (defense in depth)
+  if (invite.event_id !== session.eid) {
+    redirect('/denied')
+  }
+
+  // Event review window check
+  let event
+  try {
+    event = await findEventById(session.eid)
+  } catch {
+    redirect('/denied')
+  }
+
+  if (!event) {
+    redirect('/denied')
+  }
+  if (new Date(event.review_close) <= new Date()) {
+    redirect('/denied?r=closed')
+  }
+  if (!['reviewing', 'open', 'closed'].includes(event.status)) {
+    redirect('/denied?r=unavailable')
+  }
+
+  // ─── Fetch favorites ──────────────────────────────────────────────────────
+  let initialFavorites = []
+  try {
+    const rows = await getFavorites(session.iid)
+    initialFavorites = rows.map(r => r.application_id)
+  } catch {
+    // Non-fatal — favorites just won't be pre-populated
+  }
+
+  const sessionInfo = {
+    repName: session.rn,
+    repAgency: session.ra ?? null,
+    exp: session.exp,
+  }
+
+  // ─── Fetch gallery data ───────────────────────────────────────────────────
+  const { submissions, error } = await getSubmissions()
 
   return (
     <main className="page">
@@ -135,11 +203,13 @@ export default async function Page() {
             <span>No submissions are currently available. Please check back as new talent is added.</span>
           </div>
         ) : (
-          <TalentGallery data={submissions} />
+          <TalentGallery
+            data={submissions}
+            session={sessionInfo}
+            initialFavorites={initialFavorites}
+          />
         )}
       </section>
     </main>
-  );
+  )
 }
-
-

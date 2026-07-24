@@ -1,229 +1,141 @@
-"use client";
+'use client'
 
-import { useState } from "react";
+import { useState } from 'react'
 
-export function TalentModal({ talent, children }) {
-  const [open, setOpen] = useState(false);
-  const [activeImage, setActiveImage] = useState(null);
-  const [activeVideo, setActiveVideo] = useState(null);
-  const [activeResume, setActiveResume] = useState(null);
+export function TalentModal({
+  talent,
+  children,
+  isFavorited = false,
+  onToggleFavorite = null,
+  introRequested = false,
+  onRequestIntro = null,
+  sessionRepName = '',
+}) {
+  const [open, setOpen] = useState(false)
+  const [activeImage, setActiveImage] = useState(null)
+  const [activeVideo, setActiveVideo] = useState(null)
+  const [activeResume, setActiveResume] = useState(null)
+  const [favoriting, setFavoriting] = useState(false)
+  const [introStep, setIntroStep] = useState(introRequested ? 'sent' : 'idle')
+  const [introForm, setIntroForm] = useState({
+    requesterName: sessionRepName,
+    requesterEmail: '',
+    requesterRole: '',
+    requesterMessage: '',
+  })
+  const [introError, setIntroError] = useState(null)
 
   const normalizeUrl = (url) => {
-    if (!url) return "";
-    const trimmed = url.trim();
-
-    // Already has protocol
-    if (/^https?:\/\//i.test(trimmed)) return trimmed;
-    // Protocol-relative
-    if (/^\/\//.test(trimmed)) return `https:${trimmed}`;
-
-    // Bare domains or paths -> assume https
-    return `https://${trimmed}`;
-  };
+    if (!url) return ''
+    const trimmed = url.trim()
+    if (/^https?:\/\//i.test(trimmed)) return trimmed
+    if (/^\/\//.test(trimmed)) return `https:${trimmed}`
+    return `https://${trimmed}`
+  }
 
   const linkifyText = (text) => {
-    if (!text || typeof text !== "string") return text;
-
-    const urlRegex =
-      /((https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*)/g;
-    const parts = [];
-    let lastIndex = 0;
-    let match;
-
+    if (!text || typeof text !== 'string') return text
+    const urlRegex = /((https?:\/\/|www\.)[^\s]+|[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}[^\s]*)/g
+    const parts = []
+    let lastIndex = 0
+    let match
     while ((match = urlRegex.exec(text)) !== null) {
-      const [fullMatch] = match;
-      const start = match.index;
-
-      if (start > lastIndex) {
-        parts.push(text.slice(lastIndex, start));
-      }
-
-      const href = normalizeUrl(fullMatch);
-      parts.push(
-        <a
-          key={`link-${start}`}
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {fullMatch}
-        </a>
-      );
-
-      lastIndex = start + fullMatch.length;
+      const [fullMatch] = match
+      const start = match.index
+      if (start > lastIndex) parts.push(text.slice(lastIndex, start))
+      const href = normalizeUrl(fullMatch)
+      parts.push(<a key={`link-${start}`} href={href} target="_blank" rel="noopener noreferrer">{fullMatch}</a>)
+      lastIndex = start + fullMatch.length
     }
-
-    if (lastIndex < text.length) {
-      parts.push(text.slice(lastIndex));
-    }
-
-    return parts.length > 0 ? parts : text;
-  };
+    if (lastIndex < text.length) parts.push(text.slice(lastIndex))
+    return parts.length > 0 ? parts : text
+  }
 
   const getEmbedUrl = (url) => {
-    if (!url) return "";
-    const normalized = normalizeUrl(url);
-
-    // Handle YouTube
-    if (normalized.includes("youtube.com") || normalized.includes("youtu.be")) {
-      // Already an embed URL
-      if (normalized.includes("/embed/")) return normalized;
-
-      let videoId = "";
-
-      // Standard watch URLs with v=
-      const vParamMatch = normalized.match(/[?&]v=([^&]+)/);
-      if (vParamMatch && vParamMatch[1]) {
-        videoId = vParamMatch[1];
+    if (!url) return ''
+    const normalized = normalizeUrl(url)
+    if (normalized.includes('youtube.com') || normalized.includes('youtu.be')) {
+      if (normalized.includes('/embed/')) return normalized
+      let videoId = ''
+      const vParamMatch = normalized.match(/[?&]v=([^&]+)/)
+      if (vParamMatch?.[1]) videoId = vParamMatch[1]
+      if (!videoId && normalized.includes('youtu.be/')) {
+        const m = normalized.match(/youtu\.be\/([^?&]+)/)
+        if (m?.[1]) videoId = m[1]
       }
-
-      // Short youtu.be links
-      if (!videoId && normalized.includes("youtu.be/")) {
-        const match = normalized.match(/youtu\.be\/([^?&]+)/);
-        if (match && match[1]) {
-          videoId = match[1];
-        }
+      if (!videoId && normalized.includes('/shorts/')) {
+        const m = normalized.match(/\/shorts\/([^?&/]+)/)
+        if (m?.[1]) videoId = m[1]
       }
-
-      // Shorts URLs
-      if (!videoId && normalized.includes("/shorts/")) {
-        const match = normalized.match(/\/shorts\/([^?&/]+)/);
-        if (match && match[1]) {
-          videoId = match[1];
-        }
+      if (!videoId && normalized.includes('/live/')) {
+        const m = normalized.match(/\/live\/([^?&/]+)/)
+        if (m?.[1]) videoId = m[1]
       }
-
-      // Live URLs
-      if (!videoId && normalized.includes("/live/")) {
-        const match = normalized.match(/\/live\/([^?&/]+)/);
-        if (match && match[1]) {
-          videoId = match[1];
-        }
-      }
-
-      if (videoId) {
-        return `https://www.youtube.com/embed/${videoId}`;
-      }
-
-      // Playlist-only URLs (no v=), e.g. playlist view
-      const listMatch = normalized.match(/[?&]list=([^&]+)/);
-      if (listMatch && listMatch[1]) {
-        const listId = listMatch[1];
-        return `https://www.youtube.com/embed/videoseries?list=${listId}`;
-      }
-
-      // If it's a YouTube URL we can't safely embed (channel, studio, etc.),
-      // return empty string so we can fall back to an "open in new tab" link.
-      return "";
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`
+      const listMatch = normalized.match(/[?&]list=([^&]+)/)
+      if (listMatch?.[1]) return `https://www.youtube.com/embed/videoseries?list=${listMatch[1]}`
+      return ''
     }
-
-    // Handle Vimeo
-    if (normalized.includes("vimeo.com")) {
-      // Skip user profile pages - these can't be embedded
-      if (normalized.includes("/user")) {
-        return "";
-      }
-
-      // Parse the URL to handle query params
-      let urlPath;
-      try {
-        const urlObj = new URL(normalized);
-        urlPath = urlObj.pathname;
-      } catch {
-        urlPath = normalized.replace(/^https?:\/\/[^/]+/, "");
-      }
-
-      // Remove leading/trailing slashes and split
-      const pathParts = urlPath.replace(/^\/+|\/+$/g, "").split("/");
-
-      // Vimeo video URLs can be:
-      // - /123456789 (public video)
-      // - /123456789/abcdef123 (private/unlisted video with hash)
-      // - /video/123456789 (alternative format)
-      // - /channels/channelname/123456789
-
-      let videoId = "";
-      let privateHash = "";
-
-      // Find the numeric video ID in the path
+    if (normalized.includes('vimeo.com')) {
+      if (normalized.includes('/user')) return ''
+      let urlPath
+      try { urlPath = new URL(normalized).pathname } catch { urlPath = normalized.replace(/^https?:\/\/[^/]+/, '') }
+      const pathParts = urlPath.replace(/^\/+|\/+$/g, '').split('/')
+      let videoId = '', privateHash = ''
       for (let i = 0; i < pathParts.length; i++) {
-        const part = pathParts[i];
-        // Skip known non-video segments
-        if (["video", "channels", "groups", "album", "showcase"].includes(part)) {
-          continue;
-        }
-        // Found a numeric ID
+        const part = pathParts[i]
+        if (['video', 'channels', 'groups', 'album', 'showcase'].includes(part)) continue
         if (/^\d+$/.test(part)) {
-          videoId = part;
-          // Check if next part is a private hash (alphanumeric, not purely numeric)
+          videoId = part
           if (pathParts[i + 1] && /^[a-zA-Z0-9]+$/.test(pathParts[i + 1]) && !/^\d+$/.test(pathParts[i + 1])) {
-            privateHash = pathParts[i + 1];
+            privateHash = pathParts[i + 1]
           }
-          break;
+          break
         }
       }
+      if (videoId) return privateHash ? `https://player.vimeo.com/video/${videoId}?h=${privateHash}` : `https://player.vimeo.com/video/${videoId}`
+    }
+    if (normalized.includes('dropbox.com') || normalized.includes('drive.google.com') ||
+        normalized.includes('onedrive.live.com') || normalized.includes('1drv.ms') ||
+        normalized.includes('sync.com')) return ''
+    const knownVideoPatterns = ['youtube.com', 'youtu.be', 'vimeo.com', 'player.vimeo.com', 'dailymotion.com', 'wistia.com', 'loom.com', 'streamable.com']
+    if (!knownVideoPatterns.some(p => normalized.includes(p))) return ''
+    return normalized
+  }
 
-      if (videoId) {
-        // If there's a private hash, include it as h= parameter
-        if (privateHash) {
-          return `https://player.vimeo.com/video/${videoId}?h=${privateHash}`;
-        }
-        return `https://player.vimeo.com/video/${videoId}`;
+  async function handleToggleFavorite(e) {
+    e.stopPropagation()
+    if (!onToggleFavorite || favoriting) return
+    setFavoriting(true)
+    try { await onToggleFavorite(talent.applicationId) } finally { setFavoriting(false) }
+  }
+
+  async function handleIntroSubmit(e) {
+    e.preventDefault()
+    if (!onRequestIntro || introStep === 'sending') return
+    setIntroStep('sending')
+    setIntroError(null)
+    const result = await onRequestIntro(talent.applicationId, {
+      requesterName: introForm.requesterName.trim(),
+      requesterEmail: introForm.requesterEmail.trim(),
+      requesterRole: introForm.requesterRole.trim(),
+      requesterMessage: introForm.requesterMessage.trim(),
+    })
+    if (result.ok) {
+      setIntroStep('sent')
+    } else {
+      setIntroStep('form')
+      const msgs = {
+        requester_name_required: 'Please enter your name.',
+        requester_email_invalid: 'Please enter a valid email address.',
+        requester_role_too_long: 'Role must be under 120 characters.',
+        requester_message_too_long: 'Message must be under 1000 characters.',
+        email_delivery_failed: 'Email delivery failed. Please try again.',
+        network_error: 'Network error. Please try again.',
       }
+      setIntroError(msgs[result.error] ?? 'Something went wrong. Please try again.')
     }
-
-    // Handle Dropbox share links
-    // Dropbox requires authentication that doesn't work in iframes
-    // Return empty to trigger "open in new tab" fallback
-    if (normalized.includes("dropbox.com")) {
-      return "";
-    }
-
-    // Handle Google Drive share links
-    // Drive shared videos often block iframe embedding or require sign-in
-    // Return empty to trigger "open in new tab" fallback
-    if (normalized.includes("drive.google.com")) {
-      return "";
-    }
-
-    // Handle OneDrive share links
-    // OneDrive requires authentication that doesn't work in iframes
-    // Return empty to trigger "open in new tab" fallback
-    if (normalized.includes("onedrive.live.com") || normalized.includes("1drv.ms")) {
-      return "";
-    }
-
-    // Handle Sync.com links (file sharing service, can't embed)
-    if (normalized.includes("sync.com")) {
-      return "";
-    }
-
-    // Only embed URLs from known video platforms
-    // If it's not a recognized platform, return empty to show "open in new tab" fallback
-    const knownVideoPatterns = [
-      "youtube.com",
-      "youtu.be",
-      "vimeo.com",
-      "player.vimeo.com",
-      "dailymotion.com",
-      "wistia.com",
-      "loom.com",
-      "streamable.com",
-    ];
-
-    const isKnownVideoPlatform = knownVideoPatterns.some((pattern) =>
-      normalized.includes(pattern)
-    );
-
-    if (!isKnownVideoPlatform) {
-      // Return empty for unknown platforms or invalid URLs
-      // This triggers the "open in new tab" fallback
-      return "";
-    }
-
-    // Return original if already embeddable
-    return normalized;
-  };
+  }
 
   return (
     <>
@@ -446,6 +358,114 @@ export function TalentModal({ talent, children }) {
                     Casting Profile
                   </a>
                 )}
+
+                {onToggleFavorite && (
+                  <button
+                    type="button"
+                    className={`modal-button modal-button-favorite ${isFavorited ? 'is-favorited' : ''}`}
+                    onClick={handleToggleFavorite}
+                    disabled={favoriting}
+                    aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
+                  >
+                    {isFavorited ? '★ Favorited' : '☆ Favorite'}
+                  </button>
+                )}
+
+                {onRequestIntro && (
+                  <div className="modal-intro-wrap">
+                    {introStep === 'idle' && (
+                      <button
+                        type="button"
+                        className="modal-button modal-button-intro"
+                        onClick={() => setIntroStep('form')}
+                      >
+                        Request Introduction
+                      </button>
+                    )}
+
+                    {(introStep === 'form' || introStep === 'sending') && (
+                      <form className="modal-intro-form" onSubmit={handleIntroSubmit}>
+                        <p className="modal-intro-form-title">Request introduction to {talent.name}</p>
+                        <p className="modal-intro-form-note">
+                          Your contact details will be shared with the family so they can reach you.
+                          Prefilled from the invite — edit if you are a different person.
+                        </p>
+                        <div className="modal-intro-fields">
+                          <label className="modal-intro-label">
+                            Your name *
+                            <input
+                              className="modal-intro-input"
+                              required
+                              value={introForm.requesterName}
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterName: e.target.value }))}
+                              placeholder="Jane Smith"
+                              disabled={introStep === 'sending'}
+                            />
+                          </label>
+                          <label className="modal-intro-label">
+                            Your email *
+                            <input
+                              className="modal-intro-input"
+                              required
+                              type="email"
+                              value={introForm.requesterEmail}
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterEmail: e.target.value }))}
+                              placeholder="jane@agency.com"
+                              disabled={introStep === 'sending'}
+                            />
+                          </label>
+                          <label className="modal-intro-label">
+                            Role / title (optional)
+                            <input
+                              className="modal-intro-input"
+                              value={introForm.requesterRole}
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterRole: e.target.value }))}
+                              placeholder="Talent Manager"
+                              disabled={introStep === 'sending'}
+                            />
+                          </label>
+                          <label className="modal-intro-label modal-intro-label--full">
+                            Message for the family (optional)
+                            <textarea
+                              className="modal-intro-input modal-intro-textarea"
+                              value={introForm.requesterMessage}
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterMessage: e.target.value }))}
+                              placeholder="A brief note about your interest or the opportunity you have in mind…"
+                              rows={3}
+                              disabled={introStep === 'sending'}
+                            />
+                          </label>
+                        </div>
+                        {introError && (
+                          <p className="modal-intro-error">{introError}</p>
+                        )}
+                        <div className="modal-intro-form-actions">
+                          <button
+                            type="submit"
+                            className="modal-button modal-button-intro"
+                            disabled={introStep === 'sending'}
+                          >
+                            {introStep === 'sending' ? 'Sending…' : 'Send Request'}
+                          </button>
+                          <button
+                            type="button"
+                            className="modal-button modal-button-secondary"
+                            onClick={() => { setIntroStep('idle'); setIntroError(null) }}
+                            disabled={introStep === 'sending'}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    )}
+
+                    {introStep === 'sent' && (
+                      <p className="modal-intro-sent">
+                        ✓ Introduction requested — the family has been notified.
+                      </p>
+                    )}
+                  </div>
+                )}
               </footer>
             </div>
 
@@ -574,5 +594,5 @@ export function TalentModal({ talent, children }) {
         </div>
       )}
     </>
-  );
+  )
 }

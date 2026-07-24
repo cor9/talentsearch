@@ -1,0 +1,59 @@
+.denied-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: #f4f4f5;
+}
+
+.denied-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.10);
+  padding: 48px 40px;
+  max-width: 480px;
+  width: 100%;
+  text-align: center;
+}
+
+.denied-icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.denied-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin: 0 0 12px;
+}
+
+.denied-body {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.65;
+  margin: 0 0 24px;
+}
+
+.denied-divider {
+  border: none;
+  border-top: 1px solid #e5e7eb;
+  margin: 0 0 20px;
+}
+
+.denied-contact {
+  font-size: 13px;
+  color: #6b7280;
+  margin: 0;
+}
+
+.denied-contact a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.denied-contact a:hover {
+  text-decoration: underline;
+}

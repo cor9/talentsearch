@@ -1,33 +1,33 @@
-'use client';
+'use client'
 
-import { useMemo, useState } from 'react';
-import { TalentModal } from './TalentModal';
+import { useMemo, useState, useCallback } from 'react'
+import { TalentModal } from './TalentModal'
 
-export function TalentGallery({ data }) {
-  const [search, setSearch] = useState('');
-  const [unionFilter, setUnionFilter] = useState('All');
-  const [ageFilter, setAgeFilter] = useState('All');
-  const [genderFilter, setGenderFilter] = useState('All');
-  const [seekingFilter, setSeekingFilter] = useState('All');
+export function TalentGallery({ data, session, initialFavorites = [] }) {
+  const [search, setSearch] = useState('')
+  const [unionFilter, setUnionFilter] = useState('All')
+  const [ageFilter, setAgeFilter] = useState('All')
+  const [genderFilter, setGenderFilter] = useState('All')
+  const [seekingFilter, setSeekingFilter] = useState('All')
+  const [favoriteIds, setFavoriteIds] = useState(() => new Set(initialFavorites))
+  const [introRequested, setIntroRequested] = useState(() => new Set())
 
   const filteredTalent = useMemo(() => {
     const searchLower = search.toLowerCase();
 
     return (data || []).filter((person) => {
-      const union = person.union || '';
-      const ageNum = typeof person.age === 'number' ? person.age : parseInt(person.age || '', 10);
-      const genderRaw = (person.genderIdentity || '').toLowerCase().trim();
-      const seeking = (person.seeking || '').toLowerCase();
+      const union = person.union || ''
+      const ageNum = typeof person.age === 'number' ? person.age : parseInt(person.age || '', 10)
+      const genderRaw = (person.genderIdentity || '').toLowerCase().trim()
+      const seeking = (person.seeking || '').toLowerCase()
 
-      // Normalize gender to strict buckets based on Gender Identity field:
-      // expected values: "Male", "Female", "Non-binary/Other"
-      let normalizedGender = 'other';
+      let normalizedGender = 'other'
       if (genderRaw.startsWith('non') || genderRaw.includes('other')) {
-        normalizedGender = 'nonbinary';
+        normalizedGender = 'nonbinary'
       } else if (genderRaw.startsWith('f') || genderRaw.includes('female')) {
-        normalizedGender = 'female';
+        normalizedGender = 'female'
       } else if (genderRaw.startsWith('m') || genderRaw.includes('male')) {
-        normalizedGender = 'male';
+        normalizedGender = 'male'
       }
 
       const haystack = [
@@ -50,10 +50,10 @@ export function TalentGallery({ data }) {
       ]
         .filter(Boolean)
         .join(' ')
-        .toLowerCase();
+        .toLowerCase()
 
-      const matchesSearch = haystack.includes(searchLower);
-      const matchesUnion = unionFilter === 'All' || union.includes(unionFilter);
+      const matchesSearch = haystack.includes(searchLower)
+      const matchesUnion = unionFilter === 'All' || union.includes(unionFilter)
 
       const matchesAge =
         ageFilter === 'All' || Number.isNaN(ageNum)
@@ -61,26 +61,72 @@ export function TalentGallery({ data }) {
           : (ageFilter === 'Under10' && ageNum < 10) ||
             (ageFilter === '10-13' && ageNum >= 10 && ageNum <= 13) ||
             (ageFilter === '14-17' && ageNum >= 14 && ageNum <= 17) ||
-            (ageFilter === '18Plus' && ageNum >= 18);
+            (ageFilter === '18Plus' && ageNum >= 18)
 
       const matchesGender =
         genderFilter === 'All'
           ? true
           : (genderFilter === 'Female' && normalizedGender === 'female') ||
             (genderFilter === 'Male' && normalizedGender === 'male') ||
-            (genderFilter === 'NonBinary' && normalizedGender === 'nonbinary');
+            (genderFilter === 'NonBinary' && normalizedGender === 'nonbinary')
 
       const matchesSeeking =
         seekingFilter === 'All'
           ? true
-          : seeking.includes(seekingFilter.toLowerCase());
+          : seeking.includes(seekingFilter.toLowerCase())
 
-      return matchesSearch && matchesUnion && matchesAge && matchesGender && matchesSeeking;
-    });
-  }, [data, search, unionFilter, ageFilter, genderFilter, seekingFilter]);
+      return matchesSearch && matchesUnion && matchesAge && matchesGender && matchesSeeking
+    })
+  }, [data, search, unionFilter, ageFilter, genderFilter, seekingFilter])
+
+  const toggleFavorite = useCallback(async (applicationId) => {
+    const wasFavorited = favoriteIds.has(applicationId)
+    setFavoriteIds(prev => {
+      const next = new Set(prev)
+      if (wasFavorited) next.delete(applicationId)
+      else next.add(applicationId)
+      return next
+    })
+    try {
+      const res = await fetch(`/api/rep/favorites/${applicationId}`, {
+        method: wasFavorited ? 'DELETE' : 'POST',
+      })
+      if (!res.ok) throw new Error('request failed')
+    } catch {
+      setFavoriteIds(prev => {
+        const next = new Set(prev)
+        if (wasFavorited) next.add(applicationId)
+        else next.delete(applicationId)
+        return next
+      })
+    }
+  }, [favoriteIds])
+
+  const requestIntro = useCallback(async (applicationId, requesterData) => {
+    if (introRequested.has(applicationId)) return { ok: true, existing: true }
+    try {
+      const res = await fetch(`/api/rep/intro/${applicationId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requesterData),
+      })
+      const json = await res.json()
+      if (res.ok) {
+        setIntroRequested(prev => new Set([...prev, applicationId]))
+        return { ok: true }
+      }
+      return { ok: false, error: json.error }
+    } catch {
+      return { ok: false, error: 'network_error' }
+    }
+  }, [introRequested])
 
   return (
     <div className="gallery">
+      {session && (
+        <RepSessionBanner repName={session.repName} repAgency={session.repAgency} exp={session.exp} />
+      )}
+
       <div className="gallery-controls">
         <div className="gallery-search">
           <label className="field-label" htmlFor="talent-search">
@@ -164,7 +210,15 @@ export function TalentGallery({ data }) {
 
       <div className="talent-grid">
         {filteredTalent.map((talent) => (
-          <TalentModal key={talent.id} talent={talent}>
+          <TalentModal
+            key={talent.id}
+            talent={talent}
+            isFavorited={talent.applicationId ? favoriteIds.has(talent.applicationId) : false}
+            onToggleFavorite={talent.applicationId ? toggleFavorite : null}
+            introRequested={talent.applicationId ? introRequested.has(talent.applicationId) : false}
+            onRequestIntro={talent.applicationId ? requestIntro : null}
+            sessionRepName={session?.repName ?? ''}
+          >
             <article className="talent-card">
               <div className="talent-card-image">
                 <img src={talent.mainHeadshot} alt={talent.name} />
@@ -172,6 +226,9 @@ export function TalentGallery({ data }) {
                   <div className="talent-card-badge">
                     {talent.videos.length} Video{talent.videos.length > 1 ? 's' : ''}
                   </div>
+                )}
+                {talent.applicationId && favoriteIds.has(talent.applicationId) && (
+                  <div className="talent-card-favorite-badge" title="In your favorites">★</div>
                 )}
               </div>
               <div className="talent-card-body">
@@ -200,7 +257,37 @@ export function TalentGallery({ data }) {
         )}
       </div>
     </div>
-  );
+  )
 }
 
+function RepSessionBanner({ repName, repAgency, exp }) {
+  const label = repAgency || repName
+  const expiryLabel = formatExpiry(exp)
+  return (
+    <div className="rep-session-banner">
+      <span className="rep-session-name">
+        Access through <strong>{label}</strong>
+      </span>
+      <span className="rep-session-expiry">Session expires {expiryLabel}</span>
+    </div>
+  )
+}
 
+function formatExpiry(exp) {
+  if (!exp) return 'soon'
+  const d = new Date(exp * 1000)
+  const now = new Date()
+  const diffMs = d - now
+  if (diffMs <= 0) return 'now'
+
+  const diffH = diffMs / (1000 * 60 * 60)
+  if (diffH < 1) {
+    const diffM = Math.ceil(diffMs / (1000 * 60))
+    return `in ${diffM} minute${diffM !== 1 ? 's' : ''}`
+  }
+  if (diffH < 24) {
+    const h = Math.ceil(diffH)
+    return `in ${h} hour${h !== 1 ? 's' : ''}`
+  }
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+}
