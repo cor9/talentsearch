@@ -33,13 +33,10 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
       const haystack = [
         person.name,
         person.stageName,
-        person.guardianName,
         person.birthday,
         person.age && String(person.age),
         person.genderIdentity,
         person.ethnicity,
-        person.email,
-        person.phone,
         person.location,
         person.localHireCities,
         person.representation,

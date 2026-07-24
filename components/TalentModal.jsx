@@ -319,15 +319,19 @@ export function TalentModal({
                 {talent.allImages && talent.allImages.length > 0 ? (
                   <div className="modal-photo-grid">
                     {talent.allImages.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className="modal-photo"
-                        onClick={() => setActiveImage(img)}
-                      >
-                        <img
-                          src={img}
-                          alt={`${talent.name} photo ${idx + 1}`}
-                        />
+                      <div key={idx} className="modal-photo-item">
+                        <div
+                          className="modal-photo"
+                          onClick={() => setActiveImage(img)}
+                        >
+                          <img
+                            src={img}
+                            alt={`${talent.name} photo ${idx + 1}`}
+                          />
+                        </div>
+                        {talent.headshotLabels?.[idx] && (
+                          <span className="modal-photo-label">{talent.headshotLabels[idx]}</span>
+                        )}
                       </div>
                     ))}
                   </div>

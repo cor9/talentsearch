@@ -1,10 +1,20 @@
 import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
-import { getSubmissions } from '../lib/airtable'
+// ─── Data source: Pages101 / Supabase ────────────────────────────────────────
+// Active adapter. Event-scoped query runs server-side with the service role.
+// To roll back to Airtable:
+//   1. Replace the two imports below with:
+//        import { getSubmissions } from '../lib/airtable'
+//   2. Change the getSubmissions call to:
+//        await getSubmissions()   (no argument)
+//   3. Ensure AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_ID are set.
+import { getSubmissions } from '../lib/pages101'
+// ─────────────────────────────────────────────────────────────────────────────
 import { verifySession, COOKIE_NAME } from '../lib/session'
 import { findInviteById, findEventById, getFavorites } from '../lib/supabase-p101'
 import { TalentGallery } from '../components/TalentGallery'
 import Image from 'next/image'
+import { OPEN_CALL } from '../config/opencall'
 
 export const dynamic = 'force-dynamic'
 
@@ -72,8 +82,10 @@ export default async function Page() {
     exp: session.exp,
   }
 
-  // ─── Fetch gallery data ───────────────────────────────────────────────────
-  const { submissions, error } = await getSubmissions()
+  // ─── Fetch gallery data (Pages101/Supabase, event-scoped) ─────────────────
+  // eventId is derived from the validated session — never from a client parameter.
+  // The page has force-dynamic so all fetches in this render are uncached.
+  const { submissions, error } = await getSubmissions(session.eid)
 
   return (
     <main className="page">
@@ -81,7 +93,7 @@ export default async function Page() {
         <div className="hero-banner">
           <Image
             src="/11k.jpeg"
-            alt="Child Actor 101 10K Strong Open Call"
+            alt={`Child Actor 101 ${OPEN_CALL.edition} Open Call`}
             width={800}
             height={600}
             priority
@@ -101,16 +113,16 @@ export default async function Page() {
               <span className="brand">Child Actor 101</span>
             </div>
             <p className="eyebrow">Attention Youth Talent Agents and Managers!</p>
-            <h1 className="page-title">Child Actor 101 Online Talent Representation Open Call</h1>
+            <h1 className="page-title">{OPEN_CALL.eventTitle}</h1>
             <p className="page-subtitle">
-              Over 100 youth actors across the United States seeking representation — ready for theatrical, commercial,
+              Over {OPEN_CALL.headshotCount} youth actors across the United States seeking representation — ready for theatrical, commercial,
               voiceover, and regional opportunities.
             </p>
           </div>
           <div className="hero-card">
             <div className="hero-card-top">
-              <p className="hero-pill">10th Open Call</p>
-              <p className="hero-highlight">100+ Youth Actors</p>
+              <p className="hero-pill">{OPEN_CALL.edition} Open Call</p>
+              <p className="hero-highlight">{OPEN_CALL.headshotCount} Youth Actors</p>
               <p className="hero-copy">
                 Each submission includes multiple headshots, video links, and casting profiles so you can quickly
                 connect with performers who match your current rosters and wish lists.
@@ -146,15 +158,15 @@ export default async function Page() {
           <div className="copy-block">
             <p>
               I am very happy to share the submissions from the Child Actor 101 Online Talent Representation Open Call.
-              This is the 10th time we have been able to provide this to our parent resource community at absolutely no
+              This is the {OPEN_CALL.edition} time we have been able to provide this to our parent resource community at absolutely no
               cost to them at all. And over the past six years we have seen some incredible success stories of talent
               that has been picked up from this opportunity we provide.
             </p>
             <p>
-              There are well over 100+ submissions from actors across the United States that are looking for reps for
+              There are well over {OPEN_CALL.headshotCount} submissions from actors across the United States that are looking for reps for
               the first time or are looking to expand their team by adding a Theatrical Agent, a Manager or a Regional
-              Agency, etc. All of their contact information is available to you to reach out to those that peak your
-              interest. There is no need to ask for permission to do so.
+              Agency, etc. To connect with families, use the <strong>Request Introduction</strong> button on each profile — we will
+              notify the family so they can reach out to you directly.
             </p>
             <p>
               The goal of this Open Call is to reach every possible Agent and Manager that is youth oriented and
@@ -200,7 +212,7 @@ export default async function Page() {
           </div>
         ) : submissions.length === 0 ? (
           <div className="alert">
-            <span>No submissions are currently available. Please check back as new talent is added.</span>
+            <span>No submissions are currently available for this event. Please check back as talent is added.</span>
           </div>
         ) : (
           <TalentGallery

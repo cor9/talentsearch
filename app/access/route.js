@@ -94,12 +94,13 @@ export async function GET(request) {
     // Non-fatal — continue
   }
 
-  // ─── 8. Log invite_redeemed and session_start ────────────────────────────
+  // ─── 8. Log invite_redeemed (first time only) and session_start ──────────
   const logOpts = { invite_id: invite.id, event_id: invite.event_id }
-  await Promise.all([
-    safeLog({ ...logOpts, action: 'invite_redeemed' }),
-    safeLog({ ...logOpts, action: 'session_start' }),
-  ])
+  const logActions = [safeLog({ ...logOpts, action: 'session_start' })]
+  if (isFirstRedemption) {
+    logActions.push(safeLog({ ...logOpts, action: 'invite_redeemed' }))
+  }
+  await Promise.all(logActions)
 
   // ─── 9. Build signed session ─────────────────────────────────────────────
   const secret = process.env.TALENTSEARCH_SESSION_SECRET
