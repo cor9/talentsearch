@@ -1,5 +1,7 @@
 import './denied.css'
 
+export const dynamic = 'force-dynamic'
+
 const MESSAGES = {
   revoked: {
     heading: 'Access Revoked',

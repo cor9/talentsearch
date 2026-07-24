@@ -10,7 +10,7 @@ import { verifySession, COOKIE_NAME } from '../../../../../lib/session'
 import {
   findInviteById,
   findEventById,
-  findApplicationForRep,
+  verifyApplicationForRep,
   addFavorite,
   removeFavorite,
   logAccess,
@@ -64,7 +64,7 @@ export async function POST(request, { params }) {
   // Verify application belongs to the session's event and is submitted
   let app
   try {
-    app = await findApplicationForRep(applicationId, session.eid)
+    app = await verifyApplicationForRep(applicationId, session.eid)
   } catch {
     return Response.json({ error: 'server_error' }, { status: 500 })
   }
@@ -100,7 +100,7 @@ export async function DELETE(request, { params }) {
   // Verify application belongs to the session's event
   let app
   try {
-    app = await findApplicationForRep(applicationId, session.eid)
+    app = await verifyApplicationForRep(applicationId, session.eid)
   } catch {
     return Response.json({ error: 'server_error' }, { status: 500 })
   }

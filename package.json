@@ -6,7 +6,13 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node tests/run.mjs",
+    "test:normalization": "node tests/run.mjs --normalization",
+    "test:security": "node tests/run.mjs --security",
+    "test:acceptance": "node tests/run.mjs --acceptance",
+    "test:perf": "node tests/run.mjs --perf",
+    "opencall:verify": "node tests/verify-launch.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-ses": "^3.1094.0",
