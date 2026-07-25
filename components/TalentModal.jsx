@@ -122,7 +122,7 @@ export function TalentModal({
       requesterMessage: introForm.requesterMessage.trim(),
     })
     if (result.ok) {
-      setIntroStep('sent')
+      setIntroStep(result.simulated ? 'simulated' : 'sent')
     } else {
       setIntroStep('form')
       const msgs = {
@@ -466,6 +466,11 @@ export function TalentModal({
                     {introStep === 'sent' && (
                       <p className="modal-intro-sent">
                         ✓ Introduction requested — the family has been notified.
+                      </p>
+                    )}
+                    {introStep === 'simulated' && (
+                      <p className="modal-intro-sent">
+                        ✓ Test introduction recorded. No external email was sent.
                       </p>
                     )}
                   </div>

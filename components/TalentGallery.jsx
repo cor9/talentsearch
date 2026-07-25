@@ -110,7 +110,7 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
       const json = await res.json()
       if (res.ok) {
         setIntroRequested(prev => new Set([...prev, applicationId]))
-        return { ok: true }
+        return { ok: true, simulated: json.simulated ?? false }
       }
       return { ok: false, error: json.error }
     } catch {

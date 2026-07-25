@@ -149,6 +149,24 @@ export async function POST(request, { params }) {
     application_id: applicationId,
   })
 
+  // ─── Seed bypass — no external email for fictional test records ────────────
+  // is_seed comes from findApplicationForRep, which queries the base table.
+  // The request is recorded for UI testing; no SES call is made.
+  if (app.is_seed) {
+    const now = new Date().toISOString()
+    try {
+      await updateIntroRequest(introReq.id, {
+        status: 'sent',
+        guardian_email_sent_at: now,
+        rep_email_sent_at: now,
+      })
+    } catch (err) {
+      console.error('updateIntroRequest (seed) failed:', err.message)
+    }
+    console.log(`[seed] Intro request ${introReq.id} recorded; SES skipped for seed application ${applicationId}.`)
+    return Response.json({ ok: true, status: 'sent', simulated: true })
+  }
+
   // ─── Send emails ────────────────────────────────────────────────────────────
   // Reply-To is the requester's email so guardian replies go directly to them.
   // Guardian email address is server-side only — never in the response.

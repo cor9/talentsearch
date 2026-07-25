@@ -86,9 +86,20 @@ export default async function Page() {
   // eventId is derived from the validated session — never from a client parameter.
   // The page has force-dynamic so all fetches in this render are uncached.
   const { submissions, error } = await getSubmissions(session.eid)
+  const isTestGallery = event?.is_test === true
 
   return (
     <main className="page">
+      {isTestGallery && (
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 9999,
+          background: '#dc2626', color: '#fff',
+          textAlign: 'center', padding: '10px 16px',
+          fontWeight: 700, fontSize: 13, letterSpacing: '0.1em',
+        }}>
+          TEST GALLERY — FICTIONAL SEED DATA — DO NOT SHARE OR FORWARD THIS LINK
+        </div>
+      )}
       <header>
         <div className="hero-banner">
           <Image
