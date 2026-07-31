@@ -12,6 +12,7 @@ export function TalentModal({
   sessionRepName = '',
 }) {
   const [open, setOpen] = useState(false)
+  const [mainPhotoIndex, setMainPhotoIndex] = useState(0)
   const [activeImage, setActiveImage] = useState(null)
   const [activeVideo, setActiveVideo] = useState(null)
   const [activeResume, setActiveResume] = useState(null)
@@ -167,6 +168,47 @@ export function TalentModal({
             </header>
 
             <div className="modal-body">
+              <section className="modal-section modal-photo-hero-section">
+                {talent.allImages && talent.allImages.length > 0 ? (
+                  <div className="modal-photo-hero">
+                    <div
+                      className="modal-photo-primary"
+                      onClick={() => setActiveImage(talent.allImages[mainPhotoIndex] ?? talent.allImages[0])}
+                    >
+                      <img
+                        src={talent.allImages[mainPhotoIndex] ?? talent.allImages[0]}
+                        alt={`${talent.name || "Performer"} photo ${mainPhotoIndex + 1}`}
+                      />
+                      {talent.headshotLabels?.[mainPhotoIndex] && (
+                        <span className="modal-photo-hero-label">
+                          {talent.headshotLabels[mainPhotoIndex]}
+                        </span>
+                      )}
+                    </div>
+                    {talent.allImages.length > 1 && (
+                      <div className="modal-photo-thumbs">
+                        {talent.allImages.map((img, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            className={`modal-photo-thumb${idx === mainPhotoIndex ? " active" : ""}`}
+                            onClick={() => setMainPhotoIndex(idx)}
+                            aria-label={`Show photo ${idx + 1} of ${talent.allImages.length}`}
+                            aria-current={idx === mainPhotoIndex}
+                          >
+                            <img src={img} alt="" />
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="modal-photo-hero modal-photo-hero-empty">
+                    <p className="modal-empty">No photos available for this submission.</p>
+                  </div>
+                )}
+              </section>
+
               <section className="modal-section">
                 <h4 className="modal-section-title">Profile details</h4>
                 <div className="modal-details-grid">
@@ -235,20 +277,28 @@ export function TalentModal({
                         <span>{talent.union}</span>
                       </p>
                     )}
-                    {talent.representation && (
+                    {talent.currentRepresentation && (
                       <p className="modal-detail">
                         <span className="modal-detail-label">
                           Current Representation
                         </span>
-                        <span>{talent.representation}</span>
+                        <span>{talent.currentRepresentation}</span>
                       </p>
                     )}
-                    {talent.seeking && (
+                    {talent.seekingRepresentation && (
                       <p className="modal-detail">
                         <span className="modal-detail-label">
-                          Seeking Representation
+                          Representation Sought
                         </span>
-                        <span>{talent.seeking}</span>
+                        <span>{talent.seekingRepresentation}</span>
+                      </p>
+                    )}
+                    {talent.representationNotes && (
+                      <p className="modal-detail">
+                        <span className="modal-detail-label">
+                          Representation Notes
+                        </span>
+                        <span>{talent.representationNotes}</span>
                       </p>
                     )}
                   </div>
@@ -308,39 +358,6 @@ export function TalentModal({
                   </div>
                 </section>
               )}
-
-              <section className="modal-section">
-                <h4 className="modal-section-title">
-                  Photos{" "}
-                  {talent.allImages && talent.allImages.length
-                    ? `(${talent.allImages.length})`
-                    : ""}
-                </h4>
-                {talent.allImages && talent.allImages.length > 0 ? (
-                  <div className="modal-photo-grid">
-                    {talent.allImages.map((img, idx) => (
-                      <div key={idx} className="modal-photo-item">
-                        <div
-                          className="modal-photo"
-                          onClick={() => setActiveImage(img)}
-                        >
-                          <img
-                            src={img}
-                            alt={`${talent.name} photo ${idx + 1}`}
-                          />
-                        </div>
-                        {talent.headshotLabels?.[idx] && (
-                          <span className="modal-photo-label">{talent.headshotLabels[idx]}</span>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="modal-empty">
-                    No photos available for this submission.
-                  </p>
-                )}
-              </section>
 
               <footer className="modal-footer">
                 {talent.resume && (

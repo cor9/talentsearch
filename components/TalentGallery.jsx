@@ -5,7 +5,6 @@ import { TalentModal } from './TalentModal'
 
 export function TalentGallery({ data, session, initialFavorites = [] }) {
   const [search, setSearch] = useState('')
-  const [unionFilter, setUnionFilter] = useState('All')
   const [ageFilter, setAgeFilter] = useState('All')
   const [genderFilter, setGenderFilter] = useState('All')
   const [seekingFilter, setSeekingFilter] = useState('All')
@@ -16,10 +15,9 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
     const searchLower = search.toLowerCase();
 
     return (data || []).filter((person) => {
-      const union = person.union || ''
       const ageNum = typeof person.age === 'number' ? person.age : parseInt(person.age || '', 10)
       const genderRaw = (person.genderIdentity || '').toLowerCase().trim()
-      const seeking = (person.seeking || '').toLowerCase()
+      const seekingSlugs = Array.isArray(person.seekingRepresentationSlugs) ? person.seekingRepresentationSlugs : []
 
       let normalizedGender = 'other'
       if (genderRaw.startsWith('non') || genderRaw.includes('other')) {
@@ -39,8 +37,9 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
         person.ethnicity,
         person.location,
         person.localHireCities,
-        person.representation,
-        person.seeking,
+        person.currentRepresentation,
+        person.seekingRepresentation,
+        person.representationNotes,
         person.castingProfiles,
         person.profileLink,
         person.supplementalNotes
@@ -50,7 +49,6 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
         .toLowerCase()
 
       const matchesSearch = haystack.includes(searchLower)
-      const matchesUnion = unionFilter === 'All' || union.includes(unionFilter)
 
       const matchesAge =
         ageFilter === 'All' || Number.isNaN(ageNum)
@@ -70,11 +68,11 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
       const matchesSeeking =
         seekingFilter === 'All'
           ? true
-          : seeking.includes(seekingFilter.toLowerCase())
+          : seekingSlugs.includes(seekingFilter)
 
-      return matchesSearch && matchesUnion && matchesAge && matchesGender && matchesSeeking
+      return matchesSearch && matchesAge && matchesGender && matchesSeeking
     })
-  }, [data, search, unionFilter, ageFilter, genderFilter, seekingFilter])
+  }, [data, search, ageFilter, genderFilter, seekingFilter])
 
   const toggleFavorite = useCallback(async (applicationId) => {
     const wasFavorited = favoriteIds.has(applicationId)
@@ -138,21 +136,6 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
           />
         </div>
         <div className="gallery-filter">
-          <label className="field-label" htmlFor="union-filter">
-            Union status
-          </label>
-          <select
-            id="union-filter"
-            className="field-select"
-            value={unionFilter}
-            onChange={(e) => setUnionFilter(e.target.value)}
-          >
-            <option value="All">Any status</option>
-            <option value="SAG">SAG-AFTRA</option>
-            <option value="Non-Union">Non-Union</option>
-          </select>
-        </div>
-        <div className="gallery-filter">
           <label className="field-label" htmlFor="age-filter">
             Age
           </label>
@@ -196,11 +179,15 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
             onChange={(e) => setSeekingFilter(e.target.value)}
           >
             <option value="All">Any</option>
-            <option value="theatrical">Theatrical</option>
             <option value="manager">Manager</option>
-            <option value="commercial">Commercial</option>
-            <option value="voice">Voiceover</option>
-            <option value="regional">Regional</option>
+            <option value="regional_agent">Regional Agent</option>
+            <option value="theatrical_agent">Theatrical (TV/Film) Agent</option>
+            <option value="commercial_agent">Commercial Agent</option>
+            <option value="voiceover_agent">Voiceover Agent</option>
+            <option value="theatre_agent">Theatre (Stage) Agent</option>
+            <option value="print_agent">Print Agent</option>
+            <option value="hosting_agent">Hosting Agent</option>
+            <option value="across_the_board">Across the Board</option>
           </select>
         </div>
       </div>
