@@ -37,6 +37,43 @@
   margin: 0 0 24px;
 }
 
+.creator-access {
+  display: block;
+  background: #1a1a2e;
+  border-radius: 10px;
+  color: #fff;
+  margin: 0 0 10px;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+.creator-access span,
+.creator-access strong {
+  display: block;
+}
+
+.creator-access span {
+  font-size: 12px;
+  margin-bottom: 3px;
+  opacity: 0.76;
+}
+
+.creator-access strong {
+  font-size: 15px;
+}
+
+.creator-access:hover,
+.creator-access:focus-visible {
+  background: #303055;
+}
+
+.creator-access-help {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0 0 24px;
+}
+
 .denied-divider {
   border: none;
   border-top: 1px solid #e5e7eb;

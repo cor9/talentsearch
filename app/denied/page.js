@@ -39,6 +39,16 @@ export default function DeniedPage({ searchParams }) {
         <div className="denied-icon">🔒</div>
         <h1 className="denied-heading">{heading}</h1>
         <p className="denied-body">{body}</p>
+        <a
+          className="creator-access"
+          href="https://pages.childactor101.com/login?next=%2Fdashboard%2Fadmin%2Fopencall%2Fsubmissions"
+        >
+          <span>Creator of this Open Call?</span>
+          <strong>Open your owner gallery</strong>
+        </a>
+        <p className="creator-access-help">
+          Sign in with your Pages101 owner email. Representative invitations are only for outside agents and managers.
+        </p>
         <hr className="denied-divider" />
         <p className="denied-contact">
           Questions? Contact{' '}
