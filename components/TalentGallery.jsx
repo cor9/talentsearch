@@ -8,6 +8,8 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
   const [ageFilter, setAgeFilter] = useState('All')
   const [genderFilter, setGenderFilter] = useState('All')
   const [seekingFilter, setSeekingFilter] = useState('All')
+  const [locationFilter, setLocationFilter] = useState('')
+  const [savedOnly, setSavedOnly] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState(() => new Set(initialFavorites))
   const [introRequested, setIntroRequested] = useState(() => new Set())
 
@@ -70,9 +72,16 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
           ? true
           : seekingSlugs.includes(seekingFilter)
 
-      return matchesSearch && matchesAge && matchesGender && matchesSeeking
+      const locationHaystack = [person.location, person.localHireCities]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase()
+      const matchesLocation = !locationFilter.trim() || locationHaystack.includes(locationFilter.trim().toLowerCase())
+      const matchesSaved = !savedOnly || Boolean(person.applicationId && favoriteIds.has(person.applicationId))
+
+      return matchesSearch && matchesAge && matchesGender && matchesSeeking && matchesLocation && matchesSaved
     })
-  }, [data, search, ageFilter, genderFilter, seekingFilter])
+  }, [data, search, ageFilter, genderFilter, seekingFilter, locationFilter, savedOnly, favoriteIds])
 
   const toggleFavorite = useCallback(async (applicationId) => {
     const wasFavorited = favoriteIds.has(applicationId)
@@ -130,7 +139,7 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
           <input
             id="talent-search"
             className="field-input"
-            placeholder="Search by name, city, rep, email, notes..."
+            placeholder="Search by name, city, rep, or notes..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -189,6 +198,32 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
             <option value="hosting_agent">Hosting Agent</option>
             <option value="across_the_board">Across the Board</option>
           </select>
+        </div>
+        <div className="gallery-filter">
+          <label className="field-label" htmlFor="location-filter">
+            Location / local hire
+          </label>
+          <input
+            id="location-filter"
+            className="field-input"
+            placeholder="City or state"
+            value={locationFilter}
+            onChange={(e) => setLocationFilter(e.target.value)}
+          />
+        </div>
+        <div className="gallery-filter">
+          <label className="field-label" htmlFor="saved-filter">
+            Saved profiles
+          </label>
+          <label className="saved-filter-toggle">
+            <input
+              id="saved-filter"
+              type="checkbox"
+              checked={savedOnly}
+              onChange={(e) => setSavedOnly(e.target.checked)}
+            />
+            <span>Show starred only</span>
+          </label>
         </div>
       </div>
 

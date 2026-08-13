@@ -356,6 +356,21 @@ h1, h2, h3, h4, p {
   flex: 0 1 auto;
 }
 
+.saved-filter-toggle {
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  min-height: 42px;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
+.saved-filter-toggle input {
+  accent-color: var(--accent);
+  height: 16px;
+  width: 16px;
+}
+
 .field-label {
   display: block;
   font-size: 0.7rem;
@@ -1096,4 +1111,3 @@ h1, h2, h3, h4, p {
   justify-content: center;
   line-height: 1;
 }
-
