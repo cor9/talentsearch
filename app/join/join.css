@@ -1,0 +1,107 @@
+.join-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: #f4f4f5;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1a1a2e;
+}
+.join-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 32px rgba(0, 0, 0, 0.10);
+  padding: 40px;
+  max-width: 520px;
+  width: 100%;
+}
+.join-eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+.join-heading {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 10px;
+}
+.join-body {
+  font-size: 15px;
+  color: #374151;
+  line-height: 1.6;
+  margin: 0 0 22px;
+}
+.join-form {
+  display: grid;
+  gap: 14px;
+}
+.join-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+.join-field input,
+.join-field select {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 400;
+  color: #1a1a2e;
+  background: #fff;
+}
+.join-field input:focus,
+.join-field select:focus {
+  outline: 2px solid #1a1a2e;
+  outline-offset: 1px;
+}
+.join-hp {
+  position: absolute;
+  left: -9999px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+.join-submit {
+  margin-top: 6px;
+  padding: 13px 20px;
+  background: #1a1a2e;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+}
+.join-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.join-error {
+  margin: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  font-size: 14px;
+}
+.join-fine {
+  margin: 18px 0 0;
+  font-size: 12px;
+  color: #9ca3af;
+  line-height: 1.5;
+}
+.join-fine a { color: #4f46e5; }
+.join-success-icon {
+  font-size: 44px;
+  line-height: 1;
+  margin-bottom: 14px;
+}

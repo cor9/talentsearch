@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server'
 const COOKIE_NAME = '__rep'
 
 // Paths that bypass session check
-const PUBLIC_PATHS = new Set(['/access', '/denied', '/favicon.ico'])
+const PUBLIC_PATHS = new Set(['/access', '/denied', '/join', '/api/join', '/favicon.ico'])
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl
