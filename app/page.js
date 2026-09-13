@@ -87,6 +87,7 @@ export default async function Page() {
   // The page has force-dynamic so all fetches in this render are uncached.
   const { submissions, error } = await getSubmissions(session.eid)
   const isTestGallery = event?.is_test === true
+  const reviewCloseLabel = formatReviewClose(event.review_close)
 
   return (
     <main className="page">
@@ -181,7 +182,13 @@ export default async function Page() {
             </p>
             <p>
               The goal of this Open Call is to reach every possible Agent and Manager that is youth oriented and
-              currently looking for talent, so feel free to share this link with your trusted colleagues.
+              currently looking for talent. Your link is for your office, so share it freely with the agents, managers
+              and assistants on your team. If a colleague at another company wants in, send them my way and I will
+              get them their own link.
+            </p>
+            <p>
+              The gallery is open through <strong>{reviewCloseLabel}</strong>. Questions? There is a short{' '}
+              <a href="#rep-faq">FAQ at the bottom of this page</a>.
             </p>
           </div>
           <div className="copy-block copy-block--accent">
@@ -232,7 +239,82 @@ export default async function Page() {
             initialFavorites={initialFavorites}
           />
         )}
+        <div className="rep-faq" id="rep-faq">
+          <h2>Questions Reps Ask Me Every Year</h2>
+          <div className="rep-faq-grid">
+            <div className="rep-faq-item">
+              <h3>How do I get back in later?</h3>
+              <p>
+                Click the same button in your invitation email. Every click starts a fresh 8-hour session, so keep
+                the email handy. If you bookmark this page instead, you will land on an &quot;Access Required&quot;
+                screen (the page cannot tell who you are without the link).
+              </p>
+            </div>
+            <div className="rep-faq-item">
+              <h3>Can I share this with my office?</h3>
+              <p>
+                Yes. Your link covers your whole company: agents, managers, assistants, interns who are secretly
+                running the place. Please do not forward it outside your office. If someone at another agency
+                wants access, email <a href="mailto:info@childactor101.com">info@childactor101.com</a> and I will
+                send them their own link. It keeps the families&apos; materials accounted for.
+              </p>
+            </div>
+            <div className="rep-faq-item">
+              <h3>How do I contact a family?</h3>
+              <p>
+                Open a profile and click <strong>Request Introduction</strong>. Enter your name, email, role and an
+                optional note. We email the family with your details, and if they are interested they reply straight
+                to you. You get a confirmation email when the request goes out. Family contact information is never
+                shown in the gallery, and one request per performer is plenty.
+              </p>
+            </div>
+            <div className="rep-faq-item">
+              <h3>What does the star do?</h3>
+              <p>
+                Favorites. Star the performers you want to come back to and they stay starred every time you return
+                on your link. Nobody else sees your list, not even other offices.
+              </p>
+            </div>
+            <div className="rep-faq-item">
+              <h3>How long is the gallery open?</h3>
+              <p>
+                Through <strong>{reviewCloseLabel}</strong>. After that the link stops working. Take your time, but
+                do not sit on the ones you love. Other offices are looking at the same kids.
+              </p>
+            </div>
+            <div className="rep-faq-item">
+              <h3>Some of these kids already have reps?</h3>
+              <p>
+                Some do. Families tell us whether they currently have representation and what they are looking to
+                add (a manager looking for a theatrical agent, a regional actor looking for LA commercial, etc.).
+                That is shown on each profile. Use the <strong>Seeking</strong> filter to narrow to your lane.
+              </p>
+            </div>
+            <div className="rep-faq-item">
+              <h3>How old are they, really?</h3>
+              <p>
+                Age is calculated from the birth month and year the family provided. We show the birth year only.
+                Every submission was made by a parent or guardian who consented to authorized industry
+                representatives viewing their child&apos;s materials.
+              </p>
+            </div>
+            <div className="rep-faq-item">
+              <h3>A video will not play or a link is dead.</h3>
+              <p>
+                Families provide their own links, and every year a few are set to private or typed wrong. Email{' '}
+                <a href="mailto:info@childactor101.com">info@childactor101.com</a> with the performer&apos;s name and
+                we will chase the family down for you.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   )
+}
+
+function formatReviewClose(iso) {
+  return new Date(iso).toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric', year: 'numeric', timeZone: 'America/Los_Angeles',
+  })
 }
