@@ -272,7 +272,8 @@ export default async function Page() {
               <h3>What does the star do?</h3>
               <p>
                 Favorites. Star the performers you want to come back to and they stay starred every time you return
-                on your link. Nobody else sees your list, not even other offices.
+                on your link. Favorites are saved to the link itself, so if your office shares one link, you share one
+                list. Other offices cannot see it.
               </p>
             </div>
             <div className="rep-faq-item">
