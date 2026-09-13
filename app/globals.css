@@ -653,44 +653,104 @@ h1, h2, h3, h4, p {
   border-color: var(--primary);
 }
 
-.modal-photo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-  gap: 12px;
+/* ─── Modal photo hero (primary photo + thumbnail selector) ───────────────
+   Rendered as the FIRST section in the modal body, directly under the
+   header and above "Profile details" — never below the fold by default. */
+
+.modal-photo-hero-section {
+  margin-bottom: 24px;
 }
 
-.modal-photo-item {
+.modal-photo-hero {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
+  gap: 12px;
+  width: 100%;
+  max-width: 100%;
 }
 
-.modal-photo-label {
+.modal-photo-primary {
+  position: relative;
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 4 / 5;
+  margin: 0 auto;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border-glass);
+}
+
+.modal-photo-primary img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  /* contain (not cover) so portrait, square, wide, and tall source images
+     are never cropped or stretched — their real proportions stay visible. */
+}
+
+.modal-photo-hero-empty {
+  align-items: center;
+  justify-content: center;
+  min-height: 160px;
+}
+
+.modal-photo-hero-label {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--text-muted, #6b7280);
+  color: white;
+  background: rgba(15, 23, 42, 0.75);
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
 }
 
-.modal-photo {
-  aspect-ratio: 1;
+.modal-photo-thumbs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.modal-photo-thumb {
+  width: 56px;
+  height: 56px;
+  padding: 0;
   border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
   border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
   transition: all 0.2s;
+  flex: 0 0 auto;
 }
 
-.modal-photo:hover {
-  border-color: var(--primary);
-}
-
-.modal-photo img {
+.modal-photo-thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
+}
+
+.modal-photo-thumb:hover {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.modal-photo-thumb.active {
+  border-color: var(--primary);
+}
+
+@media (min-width: 768px) {
+  .modal-photo-primary {
+    max-width: 320px;
+  }
 }
 
 /* Animations */
