@@ -10,6 +10,8 @@ export function TalentModal({
   introRequested = false,
   onRequestIntro = null,
   sessionRepName = '',
+  note = '',
+  onSaveNote = null,
 }) {
   const [open, setOpen] = useState(false)
   const [mainPhotoIndex, setMainPhotoIndex] = useState(0)
@@ -25,6 +27,9 @@ export function TalentModal({
     requesterMessage: '',
   })
   const [introError, setIntroError] = useState(null)
+  // Private notes: draft is local until saved; `note` prop is the saved value.
+  const [noteDraft, setNoteDraft] = useState(note)
+  const [noteState, setNoteState] = useState('idle') // idle | saving | saved | error
 
   const normalizeUrl = (url) => {
     if (!url) return ''
@@ -109,6 +114,22 @@ export function TalentModal({
     if (!onToggleFavorite || favoriting) return
     setFavoriting(true)
     try { await onToggleFavorite(talent.applicationId) } finally { setFavoriting(false) }
+  }
+
+  const noteDirty = noteDraft.trim() !== (note ?? '').trim()
+
+  async function handleNoteSave(e) {
+    e?.preventDefault?.()
+    if (!onSaveNote || noteState === 'saving' || !noteDirty) return
+    setNoteState('saving')
+    const result = await onSaveNote(talent.applicationId, noteDraft)
+    if (result.ok) {
+      setNoteDraft(noteDraft.trim())
+      setNoteState('saved')
+      setTimeout(() => setNoteState(s => (s === 'saved' ? 'idle' : s)), 2000)
+    } else {
+      setNoteState('error')
+    }
   }
 
   async function handleIntroSubmit(e) {
@@ -356,6 +377,42 @@ export function TalentModal({
                       </button>
                     ))}
                   </div>
+                </section>
+              )}
+
+              {onSaveNote && (
+                <section className="modal-section modal-notes">
+                  <div className="modal-notes-header">
+                    <h4 className="modal-section-title">Your notes</h4>
+                    <span className="modal-notes-hint">Private to your link. Families never see this.</span>
+                  </div>
+                  <form onSubmit={handleNoteSave} className="modal-notes-form">
+                    <textarea
+                      className="modal-notes-input"
+                      value={noteDraft}
+                      onChange={(e) => { setNoteDraft(e.target.value); if (noteState !== 'idle') setNoteState('idle') }}
+                      onBlur={() => { if (noteDirty && noteState !== 'saving') handleNoteSave() }}
+                      placeholder="Meeting times, impressions, follow-ups…"
+                      rows={4}
+                      maxLength={4000}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                    <div className="modal-notes-actions">
+                      <span className={`modal-notes-status modal-notes-status--${noteState}`}>
+                        {noteState === 'saving' && 'Saving…'}
+                        {noteState === 'saved' && '✓ Saved'}
+                        {noteState === 'error' && 'Could not save. Try again.'}
+                        {noteState === 'idle' && noteDirty && 'Unsaved changes'}
+                      </span>
+                      <button
+                        type="submit"
+                        className="modal-button modal-button-note"
+                        disabled={!noteDirty || noteState === 'saving'}
+                      >
+                        {noteDraft.trim() ? 'Save note' : 'Clear note'}
+                      </button>
+                    </div>
+                  </form>
                 </section>
               )}
 

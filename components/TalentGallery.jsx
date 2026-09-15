@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback } from 'react'
 import { TalentModal } from './TalentModal'
 
-export function TalentGallery({ data, session, initialFavorites = [] }) {
+export function TalentGallery({ data, session, initialFavorites = [], initialNotes = {} }) {
   const [search, setSearch] = useState('')
   const [ageFilter, setAgeFilter] = useState('All')
   const [genderFilter, setGenderFilter] = useState('All')
@@ -11,6 +11,7 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
   const [locationFilter, setLocationFilter] = useState('')
   const [savedOnly, setSavedOnly] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState(() => new Set(initialFavorites))
+  const [notes, setNotes] = useState(() => ({ ...initialNotes }))
   const [introRequested, setIntroRequested] = useState(() => new Set())
 
   const filteredTalent = useMemo(() => {
@@ -105,6 +106,31 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
       })
     }
   }, [favoriteIds])
+
+  // Save (or clear, when body is empty) the private note for one application.
+  const saveNote = useCallback(async (applicationId, body) => {
+    const trimmed = (body ?? '').trim()
+    try {
+      const res = await fetch(`/api/rep/notes/${applicationId}`, {
+        method: trimmed ? 'PUT' : 'DELETE',
+        headers: trimmed ? { 'Content-Type': 'application/json' } : undefined,
+        body: trimmed ? JSON.stringify({ body: trimmed }) : undefined,
+      })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        return { ok: false, error: json.error ?? 'request_failed' }
+      }
+      setNotes(prev => {
+        const next = { ...prev }
+        if (trimmed) next[applicationId] = trimmed
+        else delete next[applicationId]
+        return next
+      })
+      return { ok: true }
+    } catch {
+      return { ok: false, error: 'network_error' }
+    }
+  }, [])
 
   const requestIntro = useCallback(async (applicationId, requesterData) => {
     if (introRequested.has(applicationId)) return { ok: true, existing: true }
@@ -234,6 +260,8 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
             talent={talent}
             isFavorited={talent.applicationId ? favoriteIds.has(talent.applicationId) : false}
             onToggleFavorite={talent.applicationId ? toggleFavorite : null}
+            note={talent.applicationId ? (notes[talent.applicationId] ?? '') : ''}
+            onSaveNote={talent.applicationId ? saveNote : null}
             introRequested={talent.applicationId ? introRequested.has(talent.applicationId) : false}
             onRequestIntro={talent.applicationId ? requestIntro : null}
             sessionRepName={session?.repName ?? ''}
@@ -248,6 +276,9 @@ export function TalentGallery({ data, session, initialFavorites = [] }) {
                 )}
                 {talent.applicationId && favoriteIds.has(talent.applicationId) && (
                   <div className="talent-card-favorite-badge" title="In your favorites">★</div>
+                )}
+                {talent.applicationId && notes[talent.applicationId] && (
+                  <div className="talent-card-note-badge" title="You have notes on this profile">✎</div>
                 )}
               </div>
               <div className="talent-card-body">

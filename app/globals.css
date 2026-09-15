@@ -1203,3 +1203,80 @@ h1, h2, h3, h4, p {
   line-height: 1.6;
   color: var(--text-muted, #9ca3af);
 }
+
+/* ─── Rep notes ─────────────────────────────────────────────────────────────── */
+.modal-notes-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.modal-notes-header .modal-section-title {
+  margin: 0;
+}
+.modal-notes-hint {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+}
+.modal-notes-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.modal-notes-input {
+  width: 100%;
+  min-height: 96px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-glass);
+  background: rgba(255, 255, 255, 0.04);
+  color: inherit;
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.5;
+  resize: vertical;
+}
+.modal-notes-input:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.modal-notes-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-notes-status {
+  font-size: 12px;
+  color: var(--text-muted, #94a3b8);
+  min-height: 1em;
+}
+.modal-notes-status--saved { color: #4ade80; }
+.modal-notes-status--error { color: #f87171; }
+.modal-button-note {
+  border: 1px solid rgba(96, 165, 250, 0.6);
+  background: rgba(15, 23, 42, 0.96);
+  color: #93c5fd;
+}
+.modal-button-note:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.talent-card-note-badge {
+  position: absolute;
+  top: 8px;
+  right: 38px;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(96, 165, 250, 0.8);
+  color: #93c5fd;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  line-height: 1;
+}

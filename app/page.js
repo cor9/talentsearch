@@ -11,7 +11,7 @@ import { redirect } from 'next/navigation'
 import { getSubmissions } from '../lib/pages101'
 // ─────────────────────────────────────────────────────────────────────────────
 import { verifySession, COOKIE_NAME } from '../lib/session'
-import { findInviteById, findEventById, getFavorites } from '../lib/supabase-p101'
+import { findInviteById, findEventById, getFavorites, getNotes } from '../lib/supabase-p101'
 import { TalentGallery } from '../components/TalentGallery'
 import Image from 'next/image'
 import { OPEN_CALL } from '../config/opencall'
@@ -74,6 +74,15 @@ export default async function Page() {
     initialFavorites = rows.map(r => r.application_id)
   } catch {
     // Non-fatal — favorites just won't be pre-populated
+  }
+
+  // ─── Fetch private notes (per invite) ─────────────────────────────────────
+  let initialNotes = {}
+  try {
+    const rows = await getNotes(session.iid)
+    initialNotes = Object.fromEntries(rows.map(r => [r.application_id, r.body]))
+  } catch {
+    // Non-fatal — notes just won't be pre-populated
   }
 
   const sessionInfo = {
@@ -237,6 +246,7 @@ export default async function Page() {
             data={submissions}
             session={sessionInfo}
             initialFavorites={initialFavorites}
+            initialNotes={initialNotes}
           />
         )}
         <div className="rep-faq" id="rep-faq">
@@ -272,8 +282,9 @@ export default async function Page() {
               <h3>What does the star do?</h3>
               <p>
                 Favorites. Star the performers you want to come back to and they stay starred every time you return
-                on your link. Favorites are saved to the link itself, so if your office shares one link, you share one
-                list. Other offices cannot see it.
+                on your link. There is also a private <strong>Notes</strong> box on every profile for meeting times,
+                impressions, follow-ups. Favorites and notes are saved to the link itself, so if your office shares one
+                link, you share them. Families and other offices never see them.
               </p>
             </div>
             <div className="rep-faq-item">
