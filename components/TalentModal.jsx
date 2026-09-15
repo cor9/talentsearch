@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export function TalentModal({
   talent,
@@ -8,8 +8,13 @@ export function TalentModal({
   isFavorited = false,
   onToggleFavorite = null,
   introRequested = false,
+  introRequestedAt = null,
   onRequestIntro = null,
-  sessionRepName = '',
+  onViewContact = null,
+  contact = null,
+  identity = null,
+  identityDefaults = null,
+  onClearIdentity = null,
   note = '',
   onSaveNote = null,
 }) {
@@ -19,14 +24,29 @@ export function TalentModal({
   const [activeVideo, setActiveVideo] = useState(null)
   const [activeResume, setActiveResume] = useState(null)
   const [favoriting, setFavoriting] = useState(false)
-  const [introStep, setIntroStep] = useState(introRequested ? 'sent' : 'idle')
+  // Intro flow: idle → (confirm | note) → sending → done. `done` shows the
+  // family's contact. A requested profile opens straight into `done`.
+  const [introStep, setIntroStep] = useState(introRequested ? 'done' : 'idle')
   const [introForm, setIntroForm] = useState({
-    requesterName: sessionRepName,
-    requesterEmail: '',
-    requesterRole: '',
-    requesterMessage: '',
+    requesterName: identityDefaults?.name ?? '',
+    requesterAgency: identityDefaults?.agency ?? '',
+    requesterRole: identityDefaults?.role ?? '',
+    requesterEmail: identityDefaults?.email ?? '',
   })
+  const [introMessage, setIntroMessage] = useState('')
+  const [showNote, setShowNote] = useState(false)
   const [introError, setIntroError] = useState(null)
+  const [introResult, setIntroResult] = useState(null) // { requestedAt, familyNotified, simulated }
+  const [contactLoading, setContactLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  useEffect(() => {
+    if (open && introRequested && !contact && onViewContact && !contactLoading) {
+      setContactLoading(true)
+      onViewContact(talent.applicationId).finally(() => setContactLoading(false))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, introRequested, contact])
   // Private notes: draft is local until saved; `note` prop is the saved value.
   const [noteDraft, setNoteDraft] = useState(note)
   const [noteState, setNoteState] = useState('idle') // idle | saving | saved | error
@@ -132,32 +152,80 @@ export function TalentModal({
     }
   }
 
-  async function handleIntroSubmit(e) {
-    e.preventDefault()
+  const INTRO_ERRORS = {
+    requester_name_required: 'Please enter your name.',
+    requester_email_invalid: 'Please enter a valid email address.',
+    requester_role_too_long: 'Role must be under 120 characters.',
+    requester_agency_too_long: 'Agency must be under 200 characters.',
+    requester_message_too_long: 'Note must be under 1000 characters.',
+    identity_required: 'Please confirm your details first.',
+    email_delivery_failed: 'We could not send the emails. Please try again.',
+    network_error: 'Network error. Please try again.',
+    unauthorized: 'Your session has expired. Click your invitation link again.',
+  }
+
+  // Primary action. With a confirmed identity this is one click; otherwise
+  // it opens the one-time confirmation form.
+  function handleRequestClick(e) {
+    e?.stopPropagation?.()
     if (!onRequestIntro || introStep === 'sending') return
+    setIntroError(null)
+    if (!identity) { setIntroStep('confirm'); return }
+    submitIntro({})
+  }
+
+  async function submitIntro({ withIdentity = false }) {
+    if (!onRequestIntro) return
     setIntroStep('sending')
     setIntroError(null)
-    const result = await onRequestIntro(talent.applicationId, {
-      requesterName: introForm.requesterName.trim(),
-      requesterEmail: introForm.requesterEmail.trim(),
-      requesterRole: introForm.requesterRole.trim(),
-      requesterMessage: introForm.requesterMessage.trim(),
-    })
+    const payload = { requesterMessage: introMessage.trim() }
+    if (withIdentity) {
+      payload.requesterName = introForm.requesterName.trim()
+      payload.requesterAgency = introForm.requesterAgency.trim()
+      payload.requesterRole = introForm.requesterRole.trim()
+      payload.requesterEmail = introForm.requesterEmail.trim()
+    }
+    const result = await onRequestIntro(talent.applicationId, payload)
     if (result.ok) {
-      setIntroStep(result.simulated ? 'simulated' : 'sent')
+      setIntroResult({ requestedAt: result.requestedAt, familyNotified: result.familyNotified !== false, simulated: !!result.simulated })
+      setIntroStep('done')
+      setShowNote(false)
     } else {
-      setIntroStep('form')
-      const msgs = {
-        requester_name_required: 'Please enter your name.',
-        requester_email_invalid: 'Please enter a valid email address.',
-        requester_role_too_long: 'Role must be under 120 characters.',
-        requester_message_too_long: 'Message must be under 1000 characters.',
-        email_delivery_failed: 'Email delivery failed. Please try again.',
-        network_error: 'Network error. Please try again.',
-      }
-      setIntroError(msgs[result.error] ?? 'Something went wrong. Please try again.')
+      setIntroStep(withIdentity ? 'confirm' : 'idle')
+      setIntroError(INTRO_ERRORS[result.error] ?? 'Something went wrong. Please try again.')
     }
   }
+
+  function handleConfirmSubmit(e) {
+    e.preventDefault()
+    submitIntro({ withIdentity: true })
+  }
+
+  async function handleViewContact(e) {
+    e?.stopPropagation?.()
+    if (contact || !onViewContact || contactLoading) { setIntroStep('done'); return }
+    setContactLoading(true)
+    setIntroError(null)
+    const result = await onViewContact(talent.applicationId)
+    setContactLoading(false)
+    if (result.ok) setIntroStep('done')
+    else setIntroError(INTRO_ERRORS[result.error] ?? 'Could not load contact. Please try again.')
+  }
+
+  async function copyContact(e) {
+    e?.stopPropagation?.()
+    if (!contact) return
+    const text = [contact.guardianName, contact.guardianEmail, contact.guardianPhone].filter(Boolean).join('\n')
+    try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 2000) } catch { setCopied(false) }
+  }
+
+  const mailtoHref = contact?.guardianEmail
+    ? `mailto:${encodeURIComponent(contact.guardianEmail)}?subject=${encodeURIComponent(`Child Actor 101 Open Call — ${talent.name}`)}`
+    : null
+
+  const requestedLabel = (introResult?.requestedAt || introRequestedAt)
+    ? new Date(introResult?.requestedAt || introRequestedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    : null
 
   return (
     <>
@@ -451,101 +519,125 @@ export function TalentModal({
 
                 {onRequestIntro && (
                   <div className="modal-intro-wrap">
-                    {introStep === 'idle' && (
-                      <button
-                        type="button"
-                        className="modal-button modal-button-intro"
-                        onClick={() => setIntroStep('form')}
-                      >
-                        Request Introduction
+                    {introError && <p className="modal-intro-error">{introError}</p>}
+
+                    {introStep === 'idle' && !introRequested && (
+                      <div className="modal-intro-idle">
+                        {showNote && (
+                          <label className="modal-intro-label modal-intro-note">
+                            Note for the family <span className="modal-intro-optional">(optional)</span>
+                            <textarea
+                              className="modal-intro-textarea"
+                              rows={3}
+                              maxLength={1000}
+                              value={introMessage}
+                              onChange={(e) => setIntroMessage(e.target.value)}
+                              placeholder="e.g. Loved the comedy reel — would like to talk about theatrical representation."
+                            />
+                          </label>
+                        )}
+                        <div className="modal-intro-idle-actions">
+                          <button type="button" className="modal-button modal-button-intro" onClick={handleRequestClick}>
+                            Request Introduction
+                          </button>
+                          {!showNote && (
+                            <button type="button" className="modal-intro-link" onClick={() => setShowNote(true)}>
+                              + Add a note for the family
+                            </button>
+                          )}
+                        </div>
+                        {identity && (
+                          <p className="modal-intro-as">
+                            Requesting as <strong>{identity.name}</strong>{identity.agency ? ` · ${identity.agency}` : ''}{identity.role ? ` · ${identity.role}` : ''}
+                            {onClearIdentity && (
+                              <> · <button type="button" className="modal-intro-link" onClick={() => onClearIdentity()}>change</button></>
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )}
+
+                    {introStep === 'idle' && introRequested && (
+                      <button type="button" className="modal-button modal-button-intro" onClick={handleViewContact} disabled={contactLoading}>
+                        {contactLoading ? 'Loading…' : '✓ Intro requested · View Contact'}
                       </button>
                     )}
 
-                    {(introStep === 'form' || introStep === 'sending') && (
-                      <form className="modal-intro-form" onSubmit={handleIntroSubmit}>
-                        <p className="modal-intro-form-title">Request introduction to {talent.name}</p>
+                    {(introStep === 'confirm' || introStep === 'sending') && (
+                      <form className="modal-intro-form" onSubmit={handleConfirmSubmit}>
+                        <p className="modal-intro-form-title">Confirm your details (one time only)</p>
                         <p className="modal-intro-form-note">
-                          Your contact details will be shared with the family so they can reach you.
-                          Prefilled from the invite — edit if you are a different person.
+                          This is what the family will see. After this, Request Introduction is a single click.
                         </p>
                         <div className="modal-intro-fields">
                           <label className="modal-intro-label">
                             Your name *
-                            <input
-                              className="modal-intro-input"
-                              required
-                              value={introForm.requesterName}
-                              onChange={(e) => setIntroForm(f => ({ ...f, requesterName: e.target.value }))}
-                              placeholder="Jane Smith"
-                              disabled={introStep === 'sending'}
-                            />
+                            <input className="modal-intro-input" required value={introForm.requesterName}
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterName: e.target.value }))} />
+                          </label>
+                          <label className="modal-intro-label">
+                            Agency / company
+                            <input className="modal-intro-input" value={introForm.requesterAgency}
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterAgency: e.target.value }))} />
+                          </label>
+                          <label className="modal-intro-label">
+                            Role
+                            <input className="modal-intro-input" value={introForm.requesterRole} placeholder="Agent, Manager, Assistant…"
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterRole: e.target.value }))} />
                           </label>
                           <label className="modal-intro-label">
                             Your email *
-                            <input
-                              className="modal-intro-input"
-                              required
-                              type="email"
-                              value={introForm.requesterEmail}
-                              onChange={(e) => setIntroForm(f => ({ ...f, requesterEmail: e.target.value }))}
-                              placeholder="jane@agency.com"
-                              disabled={introStep === 'sending'}
-                            />
+                            <input className="modal-intro-input" type="email" required value={introForm.requesterEmail}
+                              onChange={(e) => setIntroForm(f => ({ ...f, requesterEmail: e.target.value }))} />
                           </label>
-                          <label className="modal-intro-label">
-                            Role / title (optional)
-                            <input
-                              className="modal-intro-input"
-                              value={introForm.requesterRole}
-                              onChange={(e) => setIntroForm(f => ({ ...f, requesterRole: e.target.value }))}
-                              placeholder="Talent Manager"
-                              disabled={introStep === 'sending'}
-                            />
-                          </label>
-                          <label className="modal-intro-label modal-intro-label--full">
-                            Message for the family (optional)
-                            <textarea
-                              className="modal-intro-input modal-intro-textarea"
-                              value={introForm.requesterMessage}
-                              onChange={(e) => setIntroForm(f => ({ ...f, requesterMessage: e.target.value }))}
-                              placeholder="A brief note about your interest or the opportunity you have in mind…"
-                              rows={3}
-                              disabled={introStep === 'sending'}
-                            />
+                          <label className="modal-intro-label modal-intro-note">
+                            Note for the family <span className="modal-intro-optional">(optional)</span>
+                            <textarea className="modal-intro-textarea" rows={3} maxLength={1000} value={introMessage}
+                              onChange={(e) => setIntroMessage(e.target.value)} />
                           </label>
                         </div>
-                        {introError && (
-                          <p className="modal-intro-error">{introError}</p>
-                        )}
                         <div className="modal-intro-form-actions">
-                          <button
-                            type="submit"
-                            className="modal-button modal-button-intro"
-                            disabled={introStep === 'sending'}
-                          >
-                            {introStep === 'sending' ? 'Sending…' : 'Send Request'}
+                          <button type="submit" className="modal-button modal-button-intro" disabled={introStep === 'sending'}>
+                            {introStep === 'sending' ? 'Sending…' : 'Confirm & Request Introduction'}
                           </button>
-                          <button
-                            type="button"
-                            className="modal-button modal-button-secondary"
-                            onClick={() => { setIntroStep('idle'); setIntroError(null) }}
-                            disabled={introStep === 'sending'}
-                          >
+                          <button type="button" className="modal-button modal-button-secondary" onClick={() => { setIntroStep('idle'); setIntroError(null) }} disabled={introStep === 'sending'}>
                             Cancel
                           </button>
                         </div>
                       </form>
                     )}
 
-                    {introStep === 'sent' && (
-                      <p className="modal-intro-sent">
-                        ✓ Introduction requested — the family has been notified.
-                      </p>
-                    )}
-                    {introStep === 'simulated' && (
-                      <p className="modal-intro-sent">
-                        ✓ Test introduction recorded. No external email was sent.
-                      </p>
+                    {introStep === 'done' && (
+                      <div className="modal-contact">
+                        <p className="modal-contact-title">✓ Introduction requested{requestedLabel ? ` · ${requestedLabel}` : ''}</p>
+                        <p className="modal-contact-lead">
+                          {introResult?.simulated
+                            ? 'Test record. No external email was sent.'
+                            : introResult && !introResult.familyNotified
+                              ? `We could not deliver the email to ${talent.name}'s family, but the contact below is yours to use.`
+                              : `${talent.name} and their parent have been notified that you're interested in connecting.`}
+                        </p>
+                        {contact ? (
+                          <>
+                            <dl className="modal-contact-grid">
+                              <dt>Parent</dt><dd>{contact.guardianName || '—'}</dd>
+                              <dt>Email</dt><dd>{contact.guardianEmail ? <a href={`mailto:${contact.guardianEmail}`}>{contact.guardianEmail}</a> : '—'}</dd>
+                              <dt>Phone</dt><dd>{contact.guardianPhone ? <a href={`tel:${contact.guardianPhone.replace(/[^+\d]/g, '')}`}>{contact.guardianPhone}</a> : '—'}</dd>
+                            </dl>
+                            <p className="modal-contact-hint">We recommend reaching out directly within the next few days.</p>
+                            <div className="modal-contact-actions">
+                              {mailtoHref && <a className="modal-button modal-button-intro" href={mailtoHref}>Email Parent</a>}
+                              <button type="button" className="modal-button modal-button-secondary" onClick={copyContact}>
+                                {copied ? 'Copied ✓' : 'Copy Contact'}
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <button type="button" className="modal-button modal-button-intro" onClick={handleViewContact} disabled={contactLoading}>
+                            {contactLoading ? 'Loading…' : 'View Contact'}
+                          </button>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}

@@ -1,18 +1,28 @@
 'use client'
 
-import { useMemo, useState, useCallback } from 'react'
+import { useMemo, useState, useCallback, useEffect } from 'react'
 import { TalentModal } from './TalentModal'
 
-export function TalentGallery({ data, session, initialFavorites = [], initialNotes = {} }) {
+export function TalentGallery({ data, session, initialFavorites = [], initialNotes = {}, initialIntros = {}, identity: initialIdentity = null, identityDefaults = null }) {
   const [search, setSearch] = useState('')
   const [ageFilter, setAgeFilter] = useState('All')
   const [genderFilter, setGenderFilter] = useState('All')
   const [seekingFilter, setSeekingFilter] = useState('All')
   const [locationFilter, setLocationFilter] = useState('')
-  const [savedOnly, setSavedOnly] = useState(false)
+  const [view, setView] = useState('all') // all | saved | intros
   const [favoriteIds, setFavoriteIds] = useState(() => new Set(initialFavorites))
   const [notes, setNotes] = useState(() => ({ ...initialNotes }))
-  const [introRequested, setIntroRequested] = useState(() => new Set())
+  // applicationId → requested_at ISO. Loaded server-side so it survives reloads.
+  const [intros, setIntros] = useState(() => ({ ...initialIntros }))
+  // applicationId → { guardianName, guardianEmail, guardianPhone }. Filled on
+  // request, on View Contact, or when the Introductions view loads.
+  const [contacts, setContacts] = useState({})
+  const [introsLoaded, setIntrosLoaded] = useState(false)
+  const [introsLoading, setIntrosLoading] = useState(false)
+  // Confirmed requester identity (server-signed cookie). Null until the first
+  // request confirms it; then Request Introduction is one click.
+  const [identity, setIdentity] = useState(initialIdentity)
+  const [identityDraft, setIdentityDraft] = useState(identityDefaults)
 
   const filteredTalent = useMemo(() => {
     const searchLower = search.toLowerCase();
@@ -78,11 +88,14 @@ export function TalentGallery({ data, session, initialFavorites = [], initialNot
         .join(' ')
         .toLowerCase()
       const matchesLocation = !locationFilter.trim() || locationHaystack.includes(locationFilter.trim().toLowerCase())
-      const matchesSaved = !savedOnly || Boolean(person.applicationId && favoriteIds.has(person.applicationId))
+      const matchesView =
+        view === 'all' ? true
+        : view === 'saved' ? Boolean(person.applicationId && favoriteIds.has(person.applicationId))
+        : Boolean(person.applicationId && intros[person.applicationId])
 
-      return matchesSearch && matchesAge && matchesGender && matchesSeeking && matchesLocation && matchesSaved
+      return matchesSearch && matchesAge && matchesGender && matchesSeeking && matchesLocation && matchesView
     })
-  }, [data, search, ageFilter, genderFilter, seekingFilter, locationFilter, savedOnly, favoriteIds])
+  }, [data, search, ageFilter, genderFilter, seekingFilter, locationFilter, view, favoriteIds, intros])
 
   const toggleFavorite = useCallback(async (applicationId) => {
     const wasFavorited = favoriteIds.has(applicationId)
@@ -132,30 +145,85 @@ export function TalentGallery({ data, session, initialFavorites = [], initialNot
     }
   }, [])
 
-  const requestIntro = useCallback(async (applicationId, requesterData) => {
-    if (introRequested.has(applicationId)) return { ok: true, existing: true }
+  const requestIntro = useCallback(async (applicationId, payload) => {
     try {
       const res = await fetch(`/api/rep/intro/${applicationId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requesterData),
+        body: JSON.stringify(payload ?? {}),
       })
-      const json = await res.json()
-      if (res.ok) {
-        setIntroRequested(prev => new Set([...prev, applicationId]))
-        return { ok: true, simulated: json.simulated ?? false }
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) return { ok: false, error: json.error ?? 'request_failed' }
+      setIntros(prev => ({ ...prev, [applicationId]: json.requestedAt ?? new Date().toISOString() }))
+      if (json.contact) setContacts(prev => ({ ...prev, [applicationId]: json.contact }))
+      if (payload?.requesterName) {
+        const confirmed = { name: payload.requesterName, agency: payload.requesterAgency ?? '', role: payload.requesterRole ?? '', email: payload.requesterEmail }
+        setIdentity(confirmed)
+        setIdentityDraft(confirmed)
       }
-      return { ok: false, error: json.error }
+      return { ok: true, ...json }
     } catch {
       return { ok: false, error: 'network_error' }
     }
-  }, [introRequested])
+  }, [])
+
+  const viewContact = useCallback(async (applicationId) => {
+    try {
+      const res = await fetch(`/api/rep/intro/${applicationId}`)
+      const json = await res.json().catch(() => ({}))
+      if (!res.ok) return { ok: false, error: json.error ?? 'request_failed' }
+      if (json.contact) setContacts(prev => ({ ...prev, [applicationId]: json.contact }))
+      return { ok: true, contact: json.contact }
+    } catch {
+      return { ok: false, error: 'network_error' }
+    }
+  }, [])
+
+  // Introductions view: pull every requested contact in one call (each is
+  // logged server-side as a reveal). Re-pulled when the request count changes.
+  const introCount = Object.keys(intros).length
+  useEffect(() => {
+    if (view !== 'intros' || introsLoading) return
+    const missing = Object.keys(intros).some(id => !contacts[id])
+    if (introsLoaded && !missing) return
+    setIntrosLoading(true)
+    fetch('/api/rep/intros')
+      .then(r => r.ok ? r.json() : { intros: [] })
+      .then(json => {
+        const next = {}
+        const when = {}
+        for (const i of json.intros ?? []) { next[i.applicationId] = i.contact; when[i.applicationId] = i.requestedAt }
+        setContacts(prev => ({ ...prev, ...next }))
+        setIntros(prev => ({ ...prev, ...when }))
+        setIntrosLoaded(true)
+      })
+      .catch(() => {})
+      .finally(() => setIntrosLoading(false))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [view, introCount])
+
+  const clearIdentity = useCallback(() => setIdentity(null), [])
 
   return (
     <div className="gallery">
       {session && (
-        <RepSessionBanner repName={session.repName} repAgency={session.repAgency} exp={session.exp} />
+        <RepSessionBanner repName={session.repName} repAgency={session.repAgency} exp={session.exp}
+          savedCount={favoriteIds.size} introCount={introCount} />
       )}
+
+      <div className="gallery-views" role="tablist" aria-label="Talent views">
+        {[
+          ['all', 'All Talent', (data || []).length],
+          ['saved', 'Saved', favoriteIds.size],
+          ['intros', 'Introductions', introCount],
+        ].map(([key, label, count]) => (
+          <button key={key} type="button" role="tab" aria-selected={view === key}
+            className={`gallery-view-tab${view === key ? ' is-active' : ''}`}
+            onClick={() => setView(key)}>
+            {label} <span className="gallery-view-count">{count}</span>
+          </button>
+        ))}
+      </div>
 
       <div className="gallery-controls">
         <div className="gallery-search">
@@ -237,21 +305,62 @@ export function TalentGallery({ data, session, initialFavorites = [], initialNot
             onChange={(e) => setLocationFilter(e.target.value)}
           />
         </div>
-        <div className="gallery-filter">
-          <label className="field-label" htmlFor="saved-filter">
-            Saved profiles
-          </label>
-          <label className="saved-filter-toggle">
-            <input
-              id="saved-filter"
-              type="checkbox"
-              checked={savedOnly}
-              onChange={(e) => setSavedOnly(e.target.checked)}
-            />
-            <span>Show starred only</span>
-          </label>
-        </div>
       </div>
+
+      {view === 'intros' && (
+        <div className="intro-workspace">
+          {introCount === 0 ? (
+            <p className="intro-workspace-empty">
+              No introductions yet. Open a profile and hit <strong>Request Introduction</strong> — the family is
+              notified and their contact appears here.
+            </p>
+          ) : (
+            <>
+              <p className="intro-workspace-hint">
+                {introsLoading ? 'Loading contacts…' : 'Everyone you have requested, newest first. Contacts stay here whenever you come back.'}
+              </p>
+              <ul className="intro-list">
+                {(data || [])
+                  .filter(t => t.applicationId && intros[t.applicationId])
+                  .sort((a, b) => new Date(intros[b.applicationId]) - new Date(intros[a.applicationId]))
+                  .map(t => {
+                    const c = contacts[t.applicationId]
+                    const when = new Date(intros[t.applicationId]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                    return (
+                      <li key={t.applicationId} className="intro-row">
+                        <img className="intro-row-photo" src={t.mainHeadshot} alt="" />
+                        <div className="intro-row-main">
+                          <p className="intro-row-name">{t.name}{t.age ? <span className="intro-row-age"> · {t.age}</span> : null}</p>
+                          <p className="intro-row-meta">Introduction requested {when}{c ? ' · Parent contact available' : ''}</p>
+                          {c && (
+                            <p className="intro-row-contact">
+                              {c.guardianName && <span>{c.guardianName}</span>}
+                              {c.guardianEmail && <a href={`mailto:${c.guardianEmail}`}>{c.guardianEmail}</a>}
+                              {c.guardianPhone && <a href={`tel:${c.guardianPhone.replace(/[^+\d]/g, '')}`}>{c.guardianPhone}</a>}
+                            </p>
+                          )}
+                          {notes[t.applicationId] && <p className="intro-row-note">✎ {notes[t.applicationId]}</p>}
+                        </div>
+                        <div className="intro-row-actions">
+                          {c?.guardianEmail && (
+                            <a className="modal-button modal-button-intro" href={`mailto:${encodeURIComponent(c.guardianEmail)}?subject=${encodeURIComponent(`Child Actor 101 Open Call — ${t.name}`)}`}>Email Parent</a>
+                          )}
+                          {c && (
+                            <button type="button" className="modal-button modal-button-secondary"
+                              onClick={() => navigator.clipboard?.writeText([c.guardianName, c.guardianEmail, c.guardianPhone].filter(Boolean).join('\n')).catch(() => {})}>
+                              Copy Contact
+                            </button>
+                          )}
+                        </div>
+                      </li>
+                    )
+                  })}
+              </ul>
+              <p className="intro-workspace-hint">Profiles below — click any to view the full submission.</p>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="talent-grid">
         {filteredTalent.map((talent) => (
@@ -262,9 +371,14 @@ export function TalentGallery({ data, session, initialFavorites = [], initialNot
             onToggleFavorite={talent.applicationId ? toggleFavorite : null}
             note={talent.applicationId ? (notes[talent.applicationId] ?? '') : ''}
             onSaveNote={talent.applicationId ? saveNote : null}
-            introRequested={talent.applicationId ? introRequested.has(talent.applicationId) : false}
+            introRequested={talent.applicationId ? Boolean(intros[talent.applicationId]) : false}
+            introRequestedAt={talent.applicationId ? (intros[talent.applicationId] ?? null) : null}
             onRequestIntro={talent.applicationId ? requestIntro : null}
-            sessionRepName={session?.repName ?? ''}
+            onViewContact={talent.applicationId ? viewContact : null}
+            contact={talent.applicationId ? (contacts[talent.applicationId] ?? null) : null}
+            identity={identity}
+            identityDefaults={identityDraft}
+            onClearIdentity={clearIdentity}
           >
             <article className="talent-card">
               <div className="talent-card-image">
@@ -280,6 +394,9 @@ export function TalentGallery({ data, session, initialFavorites = [], initialNot
                 {talent.applicationId && notes[talent.applicationId] && (
                   <div className="talent-card-note-badge" title="You have notes on this profile">✎</div>
                 )}
+                {talent.applicationId && intros[talent.applicationId] && (
+                  <div className="talent-card-intro-badge" title="Introduction requested">✓ Intro</div>
+                )}
               </div>
               <div className="talent-card-body">
                 <div className="talent-card-header">
@@ -292,8 +409,8 @@ export function TalentGallery({ data, session, initialFavorites = [], initialNot
                 <p className="talent-union">{talent.union}</p>
               </div>
               <div className="talent-card-footer">
-                <button type="button" className="talent-card-cta">
-                  View full profile
+                <button type="button" className={`talent-card-cta${talent.applicationId && intros[talent.applicationId] ? ' talent-card-cta--contact' : ''}`}>
+                  {talent.applicationId && intros[talent.applicationId] ? 'View Contact' : 'View full profile'}
                 </button>
               </div>
             </article>
@@ -310,13 +427,16 @@ export function TalentGallery({ data, session, initialFavorites = [], initialNot
   )
 }
 
-function RepSessionBanner({ repName, repAgency, exp }) {
+function RepSessionBanner({ repName, repAgency, exp, savedCount = 0, introCount = 0 }) {
   const label = repAgency || repName
   const expiryLabel = formatExpiry(exp)
   return (
     <div className="rep-session-banner">
       <span className="rep-session-name">
         Access through <strong>{label}</strong>
+      </span>
+      <span className="rep-session-progress" title="Your progress this Open Call">
+        Saved <strong>{savedCount}</strong> · Introductions <strong>{introCount}</strong>
       </span>
       <span className="rep-session-expiry">Session expires {expiryLabel}</span>
     </div>

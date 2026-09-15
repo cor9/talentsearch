@@ -10,8 +10,8 @@ import { redirect } from 'next/navigation'
 //   3. Ensure AIRTABLE_API_KEY, AIRTABLE_BASE_ID, AIRTABLE_TABLE_ID are set.
 import { getSubmissions } from '../lib/pages101'
 // ─────────────────────────────────────────────────────────────────────────────
-import { verifySession, COOKIE_NAME } from '../lib/session'
-import { findInviteById, findEventById, getFavorites, getNotes } from '../lib/supabase-p101'
+import { verifySession, COOKIE_NAME, verifyIdentity, IDENTITY_COOKIE_NAME } from '../lib/session'
+import { findInviteById, findEventById, getFavorites, getNotes, getIntroRequests } from '../lib/supabase-p101'
 import { TalentGallery } from '../components/TalentGallery'
 import Image from 'next/image'
 import { OPEN_CALL } from '../config/opencall'
@@ -74,6 +74,26 @@ export default async function Page() {
     initialFavorites = rows.map(r => r.application_id)
   } catch {
     // Non-fatal — favorites just won't be pre-populated
+  }
+
+  // ─── Fetch introductions already requested (application → requested_at) ──
+  // Contact details are NOT loaded here; they are fetched (and logged) when the
+  // rep opens Introductions or a requested profile.
+  let initialIntros = {}
+  try {
+    const rows = await getIntroRequests(session.iid)
+    initialIntros = Object.fromEntries(rows.map(r => [r.application_id, r.requested_at]))
+  } catch {
+    // Non-fatal
+  }
+
+  // ─── Confirmed requester identity (signed cookie, per browser) ────────────
+  const identity = verifyIdentity(cookieStore.get(IDENTITY_COOKIE_NAME)?.value, secret, session.iid)
+  const identityDefaults = identity ?? {
+    name: invite.rep_name ?? '',
+    agency: invite.rep_agency ?? '',
+    role: invite.rep_role ?? '',
+    email: invite.registered_via ? (invite.rep_email ?? '') : '',
   }
 
   // ─── Fetch private notes (per invite) ─────────────────────────────────────
@@ -186,8 +206,9 @@ export default async function Page() {
             <p>
               There are well over {OPEN_CALL.headshotCount} submissions from actors across the United States that are looking for reps for
               the first time or are looking to expand their team by adding a Theatrical Agent, a Manager or a Regional
-              Agency, etc. To connect with families, use the <strong>Request Introduction</strong> button on each profile — we will
-              notify the family so they can reach out to you directly.
+              Agency, etc. When someone interests you, hit <strong>Request Introduction</strong> on their profile. The family is
+              notified right away and you get the parent&apos;s contact so you can reach out directly. No need to ask me
+              for permission.
             </p>
             <p>
               The goal of this Open Call is to reach every possible Agent and Manager that is youth oriented and
@@ -247,6 +268,9 @@ export default async function Page() {
             session={sessionInfo}
             initialFavorites={initialFavorites}
             initialNotes={initialNotes}
+            initialIntros={initialIntros}
+            identity={identity}
+            identityDefaults={identityDefaults}
           />
         )}
         <div className="rep-faq" id="rep-faq">
@@ -272,19 +296,21 @@ export default async function Page() {
             <div className="rep-faq-item">
               <h3>How do I contact a family?</h3>
               <p>
-                Open a profile and click <strong>Request Introduction</strong>. Enter your name, email, role and an
-                optional note. We email the family with your details, and if they are interested they reply straight
-                to you. You get a confirmation email when the request goes out. Family contact information is never
-                shown in the gallery, and one request per performer is plenty.
+                Open a profile and click <strong>Request Introduction</strong>. The first time, confirm your name,
+                agency, role and email (one time only). From then on it is one click. The family is emailed that you
+                would like to connect, and you immediately see the parent&apos;s name, email and phone so you can reach
+                out directly. Everyone you have requested is under <strong>Introductions</strong>, with their contact,
+                whenever you come back. Adding a note for the family is optional.
               </p>
             </div>
             <div className="rep-faq-item">
-              <h3>What does the star do?</h3>
+              <h3>What do Saved, Notes and Introductions do?</h3>
               <p>
-                Favorites. Star the performers you want to come back to and they stay starred every time you return
-                on your link. There is also a private <strong>Notes</strong> box on every profile for meeting times,
-                impressions, follow-ups. Favorites and notes are saved to the link itself, so if your office shares one
-                link, you share them. Families and other offices never see them.
+                <strong>Saved</strong> is your shortlist: star a performer and they stay starred. <strong>Notes</strong> is a
+                private box on every profile for meeting times, impressions, follow-ups. <strong>Introductions</strong> is
+                everyone you have requested, with the family&apos;s contact. All three are saved to your link, so you can close
+                the browser tonight and pick up exactly where you left off. If your office shares one link, you share them.
+                Families and other offices never see any of it.
               </p>
             </div>
             <div className="rep-faq-item">
